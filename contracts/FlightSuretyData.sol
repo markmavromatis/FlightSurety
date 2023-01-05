@@ -11,6 +11,9 @@ contract FlightSuretyData {
 
     address private contractOwner;                                      // Account used to deploy contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
+    mapping(address => uint256) private registeredAirlines;              // Approved airlines who can call these methods
+    mapping(address => uint256) private pendingAirlines;                 // Airlines waiting for votes
+    uint airlineCount = 0;
 
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
@@ -50,6 +53,15 @@ contract FlightSuretyData {
     /**
     * @dev Modifier that requires the "ContractOwner" account to be the function caller
     */
+    modifier requireCaller()
+    {
+        require(registeredAirlines[msg.sender] == 1, "Caller is not an authorized");
+        _;
+    }
+
+    /**
+    * @dev Modifier that requires the "ContractOwner" account to be the function caller
+    */
     modifier requireContractOwner()
     {
         require(msg.sender == contractOwner, "Caller is not contract owner");
@@ -73,6 +85,14 @@ contract FlightSuretyData {
         return operational;
     }
 
+    /**
+     * Authorize an airline. This method is restricted to the contract owner.
+     */
+    function authorizeCaller(address callerAddress) external
+            requireContractOwner {
+        registeredAirlines[callerAddress] = 1;
+    }
+
 
     /**
     * @dev Sets contract operations on/off
@@ -93,17 +113,29 @@ contract FlightSuretyData {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
+
+    /**
+     * Returns true if the airline is authorized to sell insurance products.
+     */
+    function isAirline(address airline) public view returns (bool) {
+        return registeredAirlines[airline] == 1;
+    }
+
    /**
     * @dev Add an airline to the registration queue
     *      Can only be called from FlightSuretyApp contract
     *
     */   
-    function registerAirline
-                            (   
-                            )
-                            external
-                            pure
-    {
+    function registerAirline(address newAirline) external {
+        airlineCount = airlineCount + 1;
+        if (airlineCount <= 4) {
+            registeredAirlines[newAirline] = 1;
+        } else {
+            pendingAirlines[newAirline] += 1;
+            if (pendingAirlines[newAirline] == 4) {
+                registeredAirlines[newAirline] = 1;
+            }
+        }
     }
 
 
