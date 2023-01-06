@@ -23,7 +23,9 @@ contract FlightSuretyData {
     mapping(address => uint256) private balances;
     mapping(address => bool) private fundedAirlines;
     uint private airlineCount;
+
     uint FUNDING_REQUIREMENT = 10 ether;
+    uint8 AIRLINES_NOT_REQUIRING_VOTES = 4;
 
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
@@ -87,9 +89,16 @@ contract FlightSuretyData {
         _;
     }
 
+
+
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
+
+    function addAirlineToRegisteredList(address newAirline) private {
+        registeredAirlines[newAirline] = 1;
+        airlineCount = airlineCount.add(1);
+    }
 
     /**
     * @dev Get operating status of contract
@@ -110,8 +119,7 @@ contract FlightSuretyData {
     function authorizeCaller(address callerAddress) external
             requireContractOwner {
         require(registeredAirlines[callerAddress] == 0, "Caller address is not registered!");
-        registeredAirlines[callerAddress] = 1;
-        airlineCount = airlineCount.add(1);
+        addAirlineToRegisteredList(callerAddress);
     }
 
 
@@ -160,28 +168,31 @@ contract FlightSuretyData {
     *
     */   
     function registerAirline(address newAirline) external requireFunded {
-        airlineCount = airlineCount.add(1);
 
-        registeredAirlines[newAirline] = 1;
+        require(registeredAirlines[newAirline] == 0, "Caller is already registered");
 
-        // if (airlineCount <= 4) {
-        //     airlineCount = uint8(airlineCount.add(20));
-        //     // airlineCount = uint8(airlineCount.add(1));
-        //     // airlineCount = uint8(airlineCount.add(1));
-        //     registeredAirlines[newAirline] = 1;
-        // } else {
-        //     airlineCount = uint8(airlineCount.add(50));
-        //     address caller = msg.sender;
-        //     if (pendingAirlines[newAirline].votes[caller] == 0) {
-        //         pendingAirlines[newAirline].votesNeeded = airlineCount / 2;
-        //         pendingAirlines[newAirline].votes[caller] = 1;
-        //     } else {
-        //         pendingAirlines[newAirline].voteCount = pendingAirlines[newAirline].voteCount + 1;
-        //     }
-        //     if (pendingAirlines[newAirline].voteCount == 4) {
-        //         registeredAirlines[newAirline] = 1;
-        //     }
-        // }
+        if (airlineCount < AIRLINES_NOT_REQUIRING_VOTES) {
+            addAirlineToRegisteredList(newAirline);
+        } else {
+            address caller = msg.sender;
+            if (pendingAirlines[newAirline].votesNeeded == 0) {
+                // Initialize votesNeeded
+                uint votesNeeded = airlineCount / 2;
+                if (airlineCount % 2 == 1) {
+                    votesNeeded = votesNeeded + 1;
+                }
+                pendingAirlines[newAirline].votesNeeded = votesNeeded;
+            }
+            if (pendingAirlines[newAirline].votes[caller] == 0) {
+                // First time voting!
+                pendingAirlines[newAirline].votes[caller] = 1;
+                pendingAirlines[newAirline].voteCount = pendingAirlines[newAirline].voteCount + 1;
+            }
+            if (pendingAirlines[newAirline].voteCount >= pendingAirlines[newAirline].votesNeeded) {
+                // Past threshold, add airline to registered list
+                addAirlineToRegisteredList(newAirline);
+            }
+        }
 
     }
 
