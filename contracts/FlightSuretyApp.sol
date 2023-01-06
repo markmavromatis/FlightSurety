@@ -95,9 +95,8 @@ contract FlightSuretyApp {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
-
-    function getAirlineCount() external view returns(uint) {
-        return dataContract.getAirlineCount();
+    function fund() public payable {
+        return dataContract.fund.value(msg.value)();
     }
 
    /**
@@ -114,8 +113,6 @@ contract FlightSuretyApp {
         }
         return (isAirline, voteCount);
     }
-
-
 
    /**
     * @dev Register a future flight for insuring.

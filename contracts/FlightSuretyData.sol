@@ -253,18 +253,13 @@ contract FlightSuretyData {
     *      resulting in insurance payouts, the contract should be self-sustaining
     *
     */   
-    function fund() public payable
-    {
-        require(balances[msg.sender] == 0, "Funding already registered for this airline");
-        require(msg.value >= FUNDING_REQUIREMENT, "Required funding amount is 10 ether");
+    function fund() public payable originatedFromApp {
+        address payable originAddress = tx.origin;
+        require(fundedAirlines[originAddress] == false, "Funding already registered for this airline");
+        require(msg.value >= FUNDING_REQUIREMENT, "Minimum funding amount is 10 ether");
 
-        uint change = FUNDING_REQUIREMENT - msg.value;
-
-        balances[msg.sender] = FUNDING_REQUIREMENT;
-        if (change != 0) {
-            msg.sender.transfer(change);
-        }
-        fundedAirlines[msg.sender] = true;
+        balances[originAddress] = msg.value;
+        fundedAirlines[originAddress] = true;
     }
 
     function getFlightKey
