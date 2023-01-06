@@ -17,6 +17,7 @@ contract FlightSuretyData {
 
 
     address private contractOwner;                                      // Account used to deploy contract
+    address private appContract;                                        // App Contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
     mapping(address => uint256) private registeredAirlines;             // Approved airlines who can call these methods
     mapping(address => VotingStatus) private pendingAirlines;           // Airlines waiting for votes
@@ -36,11 +37,7 @@ contract FlightSuretyData {
     * @dev Constructor
     *      The deploying account becomes contractOwner
     */
-    constructor
-                                (
-                                ) 
-                                public 
-    {
+    constructor() public {
         contractOwner = msg.sender;
     }
 
@@ -85,10 +82,14 @@ contract FlightSuretyData {
     */
     modifier requireFunded()
     {
-        require(isFunded(msg.sender), "Caller is not a funded airline");
+        require(isFunded(tx.origin), "Caller is not a funded airline");
         _;
     }
 
+    modifier originatedFromApp() {
+        require (msg.sender == appContract, "Caller is not app");
+        _;
+    }
 
 
     /********************************************************************************************/
@@ -98,6 +99,11 @@ contract FlightSuretyData {
     function addAirlineToRegisteredList(address newAirline) private {
         registeredAirlines[newAirline] = 1;
         airlineCount = airlineCount.add(1);
+    }
+
+    // For calls to some functions, we want to behave differenet for contract owner (app).
+    function isCallerContractOwner() private view returns (bool) {
+        return msg.sender == contractOwner;
     }
 
     /**
@@ -138,6 +144,11 @@ contract FlightSuretyData {
         operational = mode;
     }
 
+    function setAppContractAddress(address accountContract) external
+            requireContractOwner {
+        appContract = accountContract;
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -167,14 +178,14 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */   
-    function registerAirline(address newAirline) external requireFunded {
+    function registerAirline(address newAirline) external requireFunded originatedFromApp {
 
         require(registeredAirlines[newAirline] == 0, "Caller is already registered");
 
         if (airlineCount < AIRLINES_NOT_REQUIRING_VOTES) {
             addAirlineToRegisteredList(newAirline);
         } else {
-            address caller = msg.sender;
+            address caller = tx.origin;
             if (pendingAirlines[newAirline].votesNeeded == 0) {
                 // Initialize votesNeeded
                 uint votesNeeded = airlineCount / 2;

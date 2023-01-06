@@ -97,11 +97,7 @@ contract FlightSuretyApp {
 
 
     function getAirlineCount() external view returns(uint) {
-        // uint returnValue = dataContract.getAirlineCount();
-        uint returnValue = dataContract.getAirlineCount();
-        // require(returnValue == 1, "Check directly");
-        // require(returnValue == 2, "FlightSuretyApp");
-        return returnValue;
+        return dataContract.getAirlineCount();
     }
 
    /**
