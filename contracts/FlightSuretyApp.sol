@@ -95,20 +95,30 @@ contract FlightSuretyApp {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
-  
+
+    function getAirlineCount() external view returns(uint) {
+        // uint returnValue = dataContract.getAirlineCount();
+        uint returnValue = dataContract.getAirlineCount();
+        // require(returnValue == 1, "Check directly");
+        // require(returnValue == 2, "FlightSuretyApp");
+        return returnValue;
+    }
+
    /**
     * @dev Add an airline to the registration queue
     *
     */   
-    function registerAirline
-                            (   
-                            )
-                            external
-                            pure
-                            returns(bool success, uint256 votes)
-    {
-        return (success, 0);
+    function registerAirline(address airline) external returns(
+            bool success, uint256 votes) {
+        dataContract.registerAirline(airline);
+        uint256 voteCount = 0;
+        bool isAirline = dataContract.isAirline(airline);
+        if (isAirline) {
+            voteCount = dataContract.getPendingAirlineVotes(airline);
+        }
+        return (isAirline, voteCount);
     }
+
 
 
    /**
