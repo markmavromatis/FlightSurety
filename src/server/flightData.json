@@ -1,0 +1,56 @@
+[
+    {
+
+      "flightNumber": "UA131",
+      "airline": "United Airlines",
+      "origin": "EWR",
+      "destination": "HND",
+      "departureDate": "Mar 1, 2023",
+      "departureTime": "13:20",
+      "departureTimeZone": "EST"
+    },
+    {
+      "flightNumber": "UA2010",
+      "airline": "United Airlines",
+      "origin": "EWR",
+      "destination": "SFO",
+      "departureDate": "Mar 1, 2023",
+      "departureTime": "2:10pm",
+      "departureTimeZone": "EST"
+    },
+    {
+      "flightNumber": "DL487",
+      "airline": "Delta Airlines",
+      "origin": "JFK",
+      "destination": "SFO",
+      "departureDate": "Mar 1, 2023",
+      "departureTime": "7:25pm",
+      "departureTimeZone": "EST"
+    },
+    {
+      "flightNumber": "DL312",
+      "airline": "Delta Airlines",
+      "origin": "JFK",
+      "destination": "HNL",
+      "departureDate": "Mar 1, 2023",
+      "departureTime": "9:00am",
+      "departureTimeZone": "EST"
+    },
+    {
+      "flightNumber": "DL5996",
+      "airline": "Delta Airlines",
+      "origin": "JFK",
+      "destination": "LHR",
+      "departureDate": "Mar 1, 2023",
+      "departureTime": "8:15am",
+      "departureTimeZone": "EST"
+    },
+    {
+      "flightNumber": "DL272",
+      "airline": "Delta Airlines",
+      "origin": "JFK",
+      "destination": "LIS",
+      "departureDate": "Mar 1, 2023",
+      "departureTime": "8:00pm",
+      "departureTimeZone": "EST"
+    }]

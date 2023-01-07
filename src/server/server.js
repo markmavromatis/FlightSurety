@@ -1,5 +1,6 @@
 import FlightSuretyApp from '../../build/contracts/FlightSuretyApp.json';
 import Config from './config.json';
+import FlightData from './flightData.json';
 import Web3 from 'web3';
 import express from 'express';
 
@@ -22,6 +23,11 @@ app.get('/api', (req, res) => {
     res.send({
       message: 'An API for use with your Dapp!'
     })
+})
+
+// Retrieve available flights
+app.get('/api/flights', (req, res) => {
+  res.send(FlightData);
 })
 
 export default app;
