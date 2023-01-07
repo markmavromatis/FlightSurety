@@ -19,6 +19,18 @@ var Config = async function(accounts) {
         "0x2f2899d6d35b1a48a4fbdc93a37a72f264a9fca7"
     ];
 
+    let airlineNames = [
+        "United Airlines",
+        "Delta Airlines",
+        "American Airlines",
+        "JetBlue Airlines",
+        "Southwest Airlines",
+        "All Nippon Airlines",
+        "Japan Airlines",
+        "Cathay Pacific Airlines",
+        "British Airways",
+        "Air France"
+    ];
 
     let owner = accounts[0];
     let firstAirline = accounts[1];
@@ -33,7 +45,8 @@ var Config = async function(accounts) {
         weiMultiple: (new BigNumber(10)).pow(18),
         testAddresses: testAddresses,
         flightSuretyData: flightSuretyData,
-        flightSuretyApp: flightSuretyApp
+        flightSuretyApp: flightSuretyApp,
+        airlineNames: airlineNames,
     }
 }
 

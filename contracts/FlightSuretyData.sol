@@ -9,6 +9,11 @@ contract FlightSuretyData {
     /*                                       DATA VARIABLES                                     */
     /********************************************************************************************/
 
+    struct AirlineInfo {
+        address airlineAddress;
+        string airlineName;
+    }
+
     struct VotingStatus {
         mapping(address => uint8) votes;
         uint votesNeeded; // Number of votes needed for approval (50% all registered airlines)
@@ -16,13 +21,17 @@ contract FlightSuretyData {
     }
 
 
+
     address private contractOwner;                                      // Account used to deploy contract
     address private appContract;                                        // App Contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
-    mapping(address => uint256) private registeredAirlines;             // Approved airlines who can call these methods
+    mapping(address => AirlineInfo) private airlineDetails;             // Approved airlines who can call these methods
+    mapping(address => bool) private registeredAirlines;             // Approved airlines who can call these methods
     mapping(address => VotingStatus) private pendingAirlines;           // Airlines waiting for votes
     mapping(address => uint256) private balances;
     mapping(address => bool) private fundedAirlines;
+    mapping(string => address) private airlineNameAddressLookup;
+
     uint private airlineCount;
 
     uint FUNDING_REQUIREMENT = 10 ether;
@@ -62,15 +71,6 @@ contract FlightSuretyData {
     /**
     * @dev Modifier that requires the "ContractOwner" account to be the function caller
     */
-    modifier requireCaller()
-    {
-        require(registeredAirlines[msg.sender] == 1, "Caller is not an authorized");
-        _;
-    }
-
-    /**
-    * @dev Modifier that requires the "ContractOwner" account to be the function caller
-    */
     modifier requireContractOwner()
     {
         require(msg.sender == contractOwner, "Caller is not contract owner");
@@ -97,7 +97,7 @@ contract FlightSuretyData {
     /********************************************************************************************/
 
     function addAirlineToRegisteredList(address newAirline) private {
-        registeredAirlines[newAirline] = 1;
+        registeredAirlines[newAirline] = true;
         airlineCount = airlineCount.add(1);
     }
 
@@ -122,9 +122,11 @@ contract FlightSuretyData {
     /**
      * Authorize an airline. This method is restricted to the contract owner.
      */
-    function authorizeCaller(address callerAddress) external
+    function authorizeCaller(address callerAddress, string calldata airlineName) external
             requireContractOwner {
-        require(registeredAirlines[callerAddress] == 0, "Caller address is not registered!");
+        require(registeredAirlines[callerAddress] == false, "Caller address is already registered!");
+        airlineDetails[callerAddress].airlineAddress = callerAddress;
+        airlineDetails[callerAddress].airlineName = airlineName;
         addAirlineToRegisteredList(callerAddress);
     }
 
@@ -153,16 +155,11 @@ contract FlightSuretyData {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
-
-    // function getContractOwner() public view returns (address) {
-    //     return contractOwner;
-    // }
-
     /**
      * Returns true if the airline is authorized to sell insurance products.
      */
     function isAirline(address airline) public view returns (bool) {
-        return registeredAirlines[airline] == 1;
+        return registeredAirlines[airline] == true;
     }
 
     function isFunded(address airline) public view returns (bool) {
@@ -178,9 +175,14 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */   
-    function registerAirline(address newAirline) external requireFunded originatedFromApp {
+    function registerAirline(address newAirline, string calldata airlineName) external requireFunded originatedFromApp {
 
-        require(registeredAirlines[newAirline] == 0, "Caller is already registered");
+        require(registeredAirlines[newAirline] == false, "Caller is already registered!");
+
+        if (airlineDetails[newAirline].airlineAddress != address(0)) {
+            airlineDetails[newAirline].airlineAddress = newAirline;
+            airlineDetails[newAirline].airlineName = airlineName;
+        }
 
         if (airlineCount < AIRLINES_NOT_REQUIRING_VOTES) {
             addAirlineToRegisteredList(newAirline);
@@ -221,7 +223,6 @@ contract FlightSuretyData {
                             external
                             payable
     {
-
     }
 
     /**
