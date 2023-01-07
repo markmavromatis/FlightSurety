@@ -32,8 +32,11 @@ contract FlightSuretyApp {
     struct Flight {
         bool isRegistered;
         uint8 statusCode;
+        uint256 createdTimestamp;
         uint256 updatedTimestamp;        
         address airline;
+        string flightNumber;
+        uint256 timestamp;
     }
     mapping(bytes32 => Flight) private flights;
 
@@ -117,15 +120,20 @@ contract FlightSuretyApp {
    /**
     * @dev Register a future flight for insuring.
     *
-    */  
-    function registerFlight
-                                (
-                                )
-                                external
-                                pure
-    {
+    */
+    function registerFlight(address airline, string calldata flightNumber, uint timestamp) external {
+
+        bytes32 flightKey = keccak256(abi.encodePacked(airline, flightNumber));
+        uint currentTime = now;
+
+        require(flights[flightKey].airline == address(0), "Duplicate flight!");
+        flights[flightKey].airline = airline;
+        flights[flightKey].createdTimestamp = currentTime;
+        flights[flightKey].updatedTimestamp = currentTime;
+        flights[flightKey].flightNumber = flightNumber;
+        flights[flightKey].timestamp = timestamp;
     }
-    
+
    /**
     * @dev Called after oracle has updated flight status
     *
@@ -163,6 +171,18 @@ contract FlightSuretyApp {
 
         emit OracleRequest(index, airline, flight, timestamp);
     } 
+
+    function buy(address airline, string calldata flightNumber) external payable{
+        require(msg.value > 0);
+        bytes32 flightKey = keccak256(abi.encodePacked(airline, flightNumber));
+        require(flights[flightKey].airline == airline, "Flight not yet registered!");
+
+        dataContract.buy.value(msg.value)(flightNumber);
+    }
+
+   function getExistingInsuranceContract(string calldata flightNumber) external view returns (uint){
+    return dataContract.getExistingInsuranceContract(flightNumber);
+   }
 
 
 // region ORACLE MANAGEMENT

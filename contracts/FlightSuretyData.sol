@@ -32,10 +32,14 @@ contract FlightSuretyData {
     mapping(address => bool) private fundedAirlines;
     mapping(string => address) private airlineNameAddressLookup;
 
+
+    mapping(string => mapping(address => uint)) private insuranceContracts;
+
     uint private airlineCount;
 
     uint FUNDING_REQUIREMENT = 10 ether;
     uint8 AIRLINES_NOT_REQUIRING_VOTES = 4;
+    uint MAX_PRICE = 1 ether;
 
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
@@ -213,16 +217,21 @@ contract FlightSuretyData {
         return pendingAirlines[newAirline].voteCount;
     }
 
+   function getExistingInsuranceContract(string calldata flightNumber) external view returns (uint){
+    return (insuranceContracts[flightNumber][tx.origin]);
+   }
+
    /**
     * @dev Buy insurance for a flight
     *
     */   
-    function buy
-                            (                             
-                            )
-                            external
-                            payable
-    {
+    function buy(string calldata flightNumber) external payable{
+        require(msg.value < MAX_PRICE, "Maximum price is 1 ether");
+        require(msg.value > 0, "Customer must provide a non-zero amount");
+        uint price = msg.value;
+        address customer = tx.origin;
+        require(insuranceContracts[flightNumber][customer] == 0, "Customer already purchased a contract for this flight!");
+        insuranceContracts[flightNumber][customer] = price;
     }
 
     /**
