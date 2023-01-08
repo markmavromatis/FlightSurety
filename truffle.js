@@ -5,10 +5,16 @@ module.exports = {
   networks: {
     development: {
       provider: function() {
-        return new HDWalletProvider(mnemonic, "http://127.0.0.1:9545/", 0, 50);
+        return new HDWalletProvider(mnemonic, "http://127.0.0.1:9545/");
       },
       network_id: '*',
       gas: 9999999
+    },
+    ganache: {
+      provider: function() {
+        return new HDWalletProvider(mnemonic, "http://127.0.0.1:8555/");
+      },
+      network_id: '*'
     }
   },
   compilers: {

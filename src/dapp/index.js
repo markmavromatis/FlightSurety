@@ -1,3 +1,4 @@
+// import AirlineData from './airlineAccounts.json';
 
 import DOM from './dom';
 import Contract from './contract';
@@ -16,6 +17,16 @@ import './flightsurety.css';
             display('Operational Status', 'Check if contract is operational', [ { label: 'Operational Status', error: error, value: result} ]);
         });
     
+        // User-submitted transaction
+        DOM.elid('register-airline').addEventListener('click', () => {
+            let airlineAccount = DOM.elid('airline-account').value;
+            let airlineName = DOM.elid('airline-name').value;
+            // Write transaction
+            contract.registerAirline(airlineAccount, airlineName, (error, result) => {
+                if (error) {console.log("**** ERROR")};
+                console.log(error,result);
+            });
+        })
 
         // User-submitted transaction
         DOM.elid('submit-oracle').addEventListener('click', () => {
@@ -25,7 +36,6 @@ import './flightsurety.css';
                 display('Oracles', 'Trigger oracles', [ { label: 'Fetch Flight Status', error: error, value: result.flight + ' ' + result.timestamp} ]);
             });
         })
-    
     });
     
 
