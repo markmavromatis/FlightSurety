@@ -1,6 +1,7 @@
 import FlightSuretyApp from '../../build/contracts/FlightSuretyApp.json';
 import Config from './config.json';
-import FlightData from './flightData.json';
+import AirlinesData from '../shared/airlinesData.json';
+import FlightsData from '../shared/flightsData.json';
 import Web3 from 'web3';
 import express from 'express';
 
@@ -25,9 +26,14 @@ app.get('/api', (req, res) => {
     })
 })
 
+// Retrieve available airlines
+app.get('/api/airlines', (req, res) => {
+  res.send(AirlinesData);
+})
+
 // Retrieve available flights
 app.get('/api/flights', (req, res) => {
-  res.send(FlightData);
+  res.send(FlightsData);
 })
 
 export default app;
