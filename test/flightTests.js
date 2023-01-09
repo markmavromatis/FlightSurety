@@ -1,5 +1,5 @@
 var Test = require('../config/testConfig.js');
-var BigNumber = require('bignumber.js');
+// var BigNumber = require('bignumber.js');
 const { default: Web3 } = require('web3');
 
 contract('Flight Surety Flight Tests', async (accounts) => {
@@ -33,20 +33,22 @@ contract('Flight Surety Flight Tests', async (accounts) => {
     })
 
     it(`(flight) We can buy an insurance contract`, async function () {
+        const flightTime = Math.round((new Date("Jan 1, 2023 12:00")).getTime() / 1000);
         const flightNumber = "UA123";
         const airline = config.owner;
-        let existing = config.flightSuretyApp.getExistingInsuranceContract(flightNumber, {from: config.owner});
+        let existing = config.flightSuretyApp.getExistingInsuranceContract(airline, flightNumber, flightTime, {from: config.owner});
         console.log("Existing? " + existing);
-        await config.flightSuretyApp.buy.sendTransaction(airline, flightNumber, {from: config.owner, value: 100})
+        await config.flightSuretyApp.buy.sendTransaction(airline, flightNumber, flightTime, {from: config.owner, value: 1})
     })
 
     it(`(flight) We cannot buy duplicate insurance contracts`, async function () {
+        const flightTime = Math.round((new Date("Jan 1, 2023 12:00")).getTime() / 1000);
         const flightNumber = "UA123";
         const airline = config.owner;
-        let existing = config.flightSuretyApp.getExistingInsuranceContract(flightNumber, {from: config.owner});
+        let existing = config.flightSuretyApp.getExistingInsuranceContract(airline, flightNumber, flightTime, {from: config.owner});
         let success = true;
         try {
-            await config.flightSuretyApp.buy.sendTransaction(airline, flightNumber, {from: config.owner, value: 100})
+            await config.flightSuretyApp.buy.sendTransaction(airline, flightNumber, {from: config.owner, value: 1})
         } catch (e) {
             success = false;
         }
@@ -58,7 +60,7 @@ contract('Flight Surety Flight Tests', async (accounts) => {
         const airline = config.owner;
         let success = true;
         try {
-            await config.flightSuretyApp.buy.sendTransaction(airline, flightNumber, {from: config.owner, value: 100})
+            await config.flightSuretyApp.buy.sendTransaction(airline, flightNumber, {from: config.owner, value: 1})
         } catch (e) {
             success = false;
         }

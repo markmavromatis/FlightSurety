@@ -123,7 +123,7 @@ contract FlightSuretyApp {
     */
     function registerFlight(address airline, string calldata flightNumber, uint timestamp) external {
 
-        bytes32 flightKey = keccak256(abi.encodePacked(airline, flightNumber));
+        bytes32 flightKey = dataContract.getFlightKey(airline, flightNumber, timestamp);
         uint currentTime = now;
 
         require(flights[flightKey].airline == address(0), "Duplicate flight!");
@@ -138,16 +138,11 @@ contract FlightSuretyApp {
     * @dev Called after oracle has updated flight status
     *
     */  
-    function processFlightStatus
-                                (
-                                    address airline,
-                                    string memory flight,
-                                    uint256 timestamp,
-                                    uint8 statusCode
-                                )
-                                internal
-                                pure
-    {
+    function processFlightStatus(address airline, string memory flight,
+            uint256 timestamp, uint8 statusCode) internal {
+        bytes32 flightKey = dataContract.getFlightKey(airline, flight, timestamp);
+        flights[flightKey].updatedTimestamp = timestamp;
+        flights[flightKey].statusCode = statusCode;
     }
 
 
@@ -172,16 +167,16 @@ contract FlightSuretyApp {
         emit OracleRequest(index, airline, flight, timestamp);
     } 
 
-    function buy(address airline, string calldata flightNumber) external payable{
-        require(msg.value > 0);
-        bytes32 flightKey = keccak256(abi.encodePacked(airline, flightNumber));
+    function buy(address airline, string calldata flightNumber, uint256 timestamp) external payable{
+        require(msg.value > 0, "Buying a contract requires ether!");
+        bytes32 flightKey = dataContract.getFlightKey(airline, flightNumber, timestamp);
         require(flights[flightKey].airline == airline, "Flight not yet registered!");
 
-        dataContract.buy.value(msg.value)(flightNumber);
+        dataContract.buy.value(msg.value)(airline, flightNumber, timestamp);
     }
 
-   function getExistingInsuranceContract(string calldata flightNumber) external view returns (uint){
-    return dataContract.getExistingInsuranceContract(flightNumber);
+   function getExistingInsuranceContract(address airline, string calldata flightNumber, uint256 timestamp) external view returns (uint){
+        return dataContract.getExistingInsuranceContract(airline, flightNumber, timestamp);
    }
 
 
@@ -294,20 +289,6 @@ contract FlightSuretyApp {
             // Handle flight status as appropriate
             processFlightStatus(airline, flight, timestamp, statusCode);
         }
-    }
-
-
-    function getFlightKey
-                        (
-                            address airline,
-                            string memory flight,
-                            uint256 timestamp
-                        )
-                        pure
-                        internal
-                        returns(bytes32) 
-    {
-        return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
 
     // Returns array of three non-duplicating integers from 0-9

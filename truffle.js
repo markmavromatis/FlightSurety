@@ -7,8 +7,7 @@ module.exports = {
       provider: function() {
         return new HDWalletProvider(mnemonic, "http://127.0.0.1:9545/");
       },
-      network_id: '*',
-      gas: 9999999
+      network_id: '*'
     },
     ganache: {
       provider: function() {

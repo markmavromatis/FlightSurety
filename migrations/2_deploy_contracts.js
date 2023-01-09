@@ -26,7 +26,7 @@ module.exports = function(deployer, network, accounts) {
         await data.setAppContractAddress(FlightSuretyApp.address, {from: accounts[0]});
 
         // Setup initial airline and fund it
-        await data.authorizeCaller(accounts[1], "United Airlines", { from: accounts[0], gas: 4712388 })
+        await data.authorizeCaller(accounts[1], "United Airlines", { from: accounts[0] })
         const app = await FlightSuretyApp.deployed();
         await app.fund({from: accounts[1], value: web3.utils.toWei("10")});
 
