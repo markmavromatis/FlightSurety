@@ -20,6 +20,13 @@ contract FlightSuretyData {
         uint voteCount; // Number of actual votes
     }
 
+    struct InsuranceContract {
+        address account;
+        uint price;
+        uint payout;
+        bool expired;
+        bool paid;
+    }
 
 
     address private contractOwner;                                      // Account used to deploy contract
@@ -28,12 +35,14 @@ contract FlightSuretyData {
     mapping(address => AirlineInfo) private airlineDetails;             // Approved airlines who can call these methods
     mapping(address => bool) private registeredAirlines;             // Approved airlines who can call these methods
     mapping(address => VotingStatus) private pendingAirlines;           // Airlines waiting for votes
-    mapping(address => uint256) private balances;
+    mapping(address => uint256) private airlineFunds;
+    mapping(address => uint256) private insuredBalances;
     mapping(address => bool) private fundedAirlines;
     mapping(string => address) private airlineNameAddressLookup;
 
 
-    mapping(bytes32 => mapping(address => uint)) private insuranceContracts;
+    mapping(bytes32 => InsuranceContract[]) private insuranceContracts;
+    mapping(bytes32 => mapping(address => InsuranceContract)) insuranceContractsLookup;
 
     uint private airlineCount;
 
@@ -217,34 +226,44 @@ contract FlightSuretyData {
         return pendingAirlines[newAirline].voteCount;
     }
 
-   function getExistingInsuranceContract(address airline, string calldata flightNumber, uint timestamp) external view returns (uint){
-    bytes32 flightKey = getFlightKey(airline, flightNumber, timestamp);
-    return (insuranceContracts[flightKey][tx.origin]);
+    // Retrieves price, payout amount for existing flight insurance policy
+    function getExistingInsuranceContract(address airline,
+            string calldata flightNumber, uint timestamp) external view
+            returns (uint, uint){
+        bytes32 flightKey = getFlightKey(airline, flightNumber, timestamp);
+        InsuranceContract memory policy = insuranceContractsLookup[flightKey][tx.origin];
+        require(policy.price > 0, "No policy found for account / flight");
+        return (policy.price, policy.payout);
    }
 
    /**
     * @dev Buy insurance for a flight
     *
     */   
-    function buy(address airline, string calldata flightNumber, uint timestamp) external payable{
+    function buy(address airline, string calldata flightNumber, uint timestamp, uint payout) external payable{
         require(msg.value < MAX_PRICE, "Maximum price is 1 ether");
         require(msg.value > 0, "Customer must provide a non-zero amount");
         uint price = msg.value;
         address customer = tx.origin;
         bytes32 flightKey = getFlightKey(airline, flightNumber, timestamp);
-        require(insuranceContracts[flightKey][customer] == 0, "Customer already purchased a contract for this flight!");
-        insuranceContracts[flightKey][customer] = price;
+        require(insuranceContractsLookup[flightKey][customer].account == address(0), "Customer already purchased a contract for this flight!");
+        InsuranceContract memory newContract = InsuranceContract(customer, price, payout, false, false);
+        insuranceContracts[flightKey].push(newContract);
+        insuranceContractsLookup[flightKey][customer] = newContract;
     }
 
     /**
      *  @dev Credits payouts to insurees
     */
-    function creditInsurees
-                                (
-                                )
-                                external
-                                pure
-    {
+    function creditInsurees(address airline, string calldata flightNumber, uint timestamp) external originatedFromApp {
+        bytes32 flightKey = getFlightKey(airline, flightNumber, timestamp);
+        InsuranceContract[] memory flightContracts = insuranceContracts[flightKey];
+        for (uint i=0; i < flightContracts.length; i++) {
+            InsuranceContract memory policy = insuranceContracts[flightKey][i];
+            address customer = policy.account;
+            uint payout = policy.payout;
+            insuredBalances[customer] = insuredBalances[customer] + payout;
+        }
     }
     
 
@@ -270,8 +289,12 @@ contract FlightSuretyData {
         require(fundedAirlines[originAddress] == false, "Funding already registered for this airline");
         require(msg.value >= FUNDING_REQUIREMENT, "Minimum funding amount is 10 ether");
 
-        balances[originAddress] = msg.value;
+        airlineFunds[originAddress] = msg.value;
         fundedAirlines[originAddress] = true;
+    }
+
+    function getInsuredBalance(address account) view external originatedFromApp returns (uint) {
+        return insuredBalances[account];
     }
 
     function getFlightKey(address airline, string memory flight,

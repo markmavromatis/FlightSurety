@@ -1,5 +1,4 @@
 var Test = require('../config/testConfig.js');
-// var BigNumber = require('bignumber.js');
 const { default: Web3 } = require('web3');
 
 contract('Flight Surety Flight Tests', async (accounts) => {
@@ -36,8 +35,14 @@ contract('Flight Surety Flight Tests', async (accounts) => {
         const flightTime = Math.round((new Date("Jan 1, 2023 12:00")).getTime() / 1000);
         const flightNumber = "UA123";
         const airline = config.owner;
-        let existing = config.flightSuretyApp.getExistingInsuranceContract(airline, flightNumber, flightTime, {from: config.owner});
-        console.log("Existing? " + existing);
+        let success = true;
+        try {
+            let existing = await config.flightSuretyApp.getExistingInsuranceContract(airline, flightNumber, flightTime, {from: config.owner});
+            success = false;
+        } catch (e) {
+            // Do nothing
+        }
+        assert(success, true, "Customer should not be able to see an existing policy if none available")
         await config.flightSuretyApp.buy.sendTransaction(airline, flightNumber, flightTime, {from: config.owner, value: 1})
     })
 

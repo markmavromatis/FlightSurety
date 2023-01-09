@@ -10,11 +10,14 @@ module.exports = {
       network_id: '*'
     },
     ganache: {
-      provider: function() {
-        return new HDWalletProvider(mnemonic, "http://127.0.0.1:8555/");
-      },
-      network_id: '*'
-    }
+      provider: () =>
+        new HDWalletProvider({
+          mnemonic: {phrase: mnemonic},
+          providerOrUrl: "http://127.0.0.1:8555",
+          numberOfAddresses: 20
+        }),
+        network_id: '*'
+      }
   },
   compilers: {
     solc: {

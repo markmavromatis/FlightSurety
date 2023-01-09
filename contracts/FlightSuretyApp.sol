@@ -39,7 +39,6 @@ contract FlightSuretyApp {
         uint256 timestamp;
     }
     mapping(bytes32 => Flight) private flights;
-
  
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -98,6 +97,10 @@ contract FlightSuretyApp {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
+    function getInsuredBalance() public view returns (uint) {
+        return dataContract.getInsuredBalance(tx.origin);
+    }
+
     function fund() public payable {
         return dataContract.fund.value(msg.value)();
     }
@@ -132,6 +135,13 @@ contract FlightSuretyApp {
         flights[flightKey].updatedTimestamp = currentTime;
         flights[flightKey].flightNumber = flightNumber;
         flights[flightKey].timestamp = timestamp;
+        flights[flightKey].statusCode = STATUS_CODE_UNKNOWN;
+    }
+
+    function getFlightStatus(address airline, string memory flight, uint256 timestamp) view public returns (uint8) {
+        bytes32 flightKey = dataContract.getFlightKey(airline, flight, timestamp);
+        require(flights[flightKey].airline != address(0), "Flight not registered!");
+        return flights[flightKey].statusCode;
     }
 
    /**
@@ -147,7 +157,7 @@ contract FlightSuretyApp {
 
 
     // Generate a request for oracles to fetch flight information
-    function fetchFlightStatus
+    function fetchFlightStatusFromOracles
                         (
                             address airline,
                             string calldata flight,
@@ -167,16 +177,26 @@ contract FlightSuretyApp {
         emit OracleRequest(index, airline, flight, timestamp);
     } 
 
+    // When a customer buys a policy, calculate the payout immediately.
+    // (If we decide in the future to change the payout calculation, existing policies will be fine)
     function buy(address airline, string calldata flightNumber, uint256 timestamp) external payable{
         require(msg.value > 0, "Buying a contract requires ether!");
         bytes32 flightKey = dataContract.getFlightKey(airline, flightNumber, timestamp);
         require(flights[flightKey].airline == airline, "Flight not yet registered!");
+        uint price = msg.value;
+        uint payout = price.mul(15).div(10);
+        if (price.mod(2) > 0) {
+            payout = payout + 1;
+        }
 
-        dataContract.buy.value(msg.value)(airline, flightNumber, timestamp);
+        dataContract.buy.value(msg.value)(airline, flightNumber, timestamp, payout);
     }
 
-   function getExistingInsuranceContract(address airline, string calldata flightNumber, uint256 timestamp) external view returns (uint){
-        return dataContract.getExistingInsuranceContract(airline, flightNumber, timestamp);
+   function getExistingInsuranceContract(address airline,
+            string calldata flightNumber, uint256 timestamp) external view
+            returns (uint, uint){
+        return dataContract.getExistingInsuranceContract(airline, flightNumber,
+                timestamp);
    }
 
 
@@ -186,7 +206,7 @@ contract FlightSuretyApp {
     uint8 private nonce = 0;    
 
     // Fee to be paid when registering oracle
-    uint256 public constant REGISTRATION_FEE = 1 ether;
+    uint256 public constant REGISTRATION_FEE = 1 wei; // TODO: Increase this during Ganache testing
 
     // Number of oracles that must respond for valid status
     uint256 private constant MIN_RESPONSES = 3;
@@ -282,12 +302,17 @@ contract FlightSuretyApp {
         // Information isn't considered verified until at least MIN_RESPONSES
         // oracles respond with the *** same *** information
         emit OracleReport(airline, flight, timestamp, statusCode);
-        if (oracleResponses[key].responses[statusCode].length >= MIN_RESPONSES) {
+        if (oracleResponses[key].responses[statusCode].length == MIN_RESPONSES) {
 
             emit FlightStatusInfo(airline, flight, timestamp, statusCode);
 
             // Handle flight status as appropriate
             processFlightStatus(airline, flight, timestamp, statusCode);
+
+            if (statusCode == STATUS_CODE_LATE_AIRLINE) {
+                // Pay out customer claims
+                dataContract.creditInsurees(airline, flight, timestamp);
+            }
         }
     }
 
