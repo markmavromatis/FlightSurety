@@ -37,7 +37,17 @@ var Config = async function(accounts) {
 
     let flightSuretyData = await FlightSuretyData.new();
     let flightSuretyApp = await FlightSuretyApp.new(flightSuretyData.address);
+    try {
+        // Set the Flight Surety App address that prevents outside calls
+        await flightSuretyData.setAppContractAddress(flightSuretyApp.address, {from: owner});
+        // Setup contract owner as first airline
+        await flightSuretyData.authorizeCaller(firstAirline, "United Airlines", {from: owner});
+        // Provide 10 ether of funding
+        await flightSuretyApp.fund({from: firstAirline, value: web3.utils.toWei("10")});
 
+    } catch (e) {
+        console.error("**** ERROR during test setup! " + e);
+    }
     
     return {
         owner: owner,

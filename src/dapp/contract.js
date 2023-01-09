@@ -31,25 +31,19 @@ export default class Contract {
                 this.passengers.push(accts[counter++]);
             }
 
-            // Setup first airline
             let self = this;
-            self.flightSuretyData.methods
-            .authorizeCaller(self.owner, "United Airlines")
-            .send({ from: self.owner, gas: 4712388 }, (error, result) => {
-                callback(error, "blah");
-            });
-
-            self.flightSuretyData.methods
-            .setAppContractAddress(self.appAddress)
-            .send({ from: self.owner, gas: 4712388 }, (error, result) => {
-                callback(error, "blah");
-            });
-
-            self.flightSuretyApp.methods
-            .fund()
-            .send({ from: self.owner, gas: 4712388, value: 10000000000000000000 }, (error, result) => {
-                callback(error, result);
-            });
+            // Check airline count
+            console.log("Retrieving airline count...");
+            try {
+                self.flightSuretyData.methods.getAirlineCount()
+                .call((error, result) => {
+                    console.log("ERROR = " + error);
+                    console.log("RESULT = " + result);
+                    callback(error, result);
+                })
+            } catch (e) {
+                console.error("ERROR: " + e);
+            }
             callback();
         });
     }

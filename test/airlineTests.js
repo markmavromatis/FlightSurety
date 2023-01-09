@@ -9,11 +9,6 @@ contract('Flight Surety Airline Tests', async (accounts) => {
   before('setup contract', async () => {
     config = await Test.Config(accounts);
     const firstAirline = config.firstAirline;
-    const firstAirlineName = config.airlineNames[1];
-
-    await config.flightSuretyData.authorizeCaller.sendTransaction(config.firstAirline, firstAirlineName, {from: config.owner});
-    await config.flightSuretyData.setAppContractAddress.sendTransaction(config.flightSuretyApp.address, {from: config.owner});
-    await config.flightSuretyApp.fund({from: firstAirline, value: web3.utils.toWei("10")});
 
     const airlineCount = await config.flightSuretyData.getAirlineCount.call({from: firstAirline});
     assert.equal(airlineCount, 1, "There should only be 1 airline");

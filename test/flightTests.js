@@ -7,10 +7,6 @@ contract('Flight Surety Flight Tests', async (accounts) => {
   var config;
   before('setup contract', async () => {
     config = await Test.Config(accounts);
-    const firstAirline = config.firstAirline;
-
-    await config.flightSuretyData.authorizeCaller.sendTransaction(config.firstAirline, {from: config.owner});
-    await config.flightSuretyData.setAppContractAddress.sendTransaction(config.flightSuretyApp.address, {from: config.owner});
 
   });
 
