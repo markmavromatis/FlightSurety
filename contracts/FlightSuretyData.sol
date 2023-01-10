@@ -22,6 +22,9 @@ contract FlightSuretyData {
 
     struct InsuranceContract {
         address account;
+        address airline;
+        string flight;
+        uint timestamp;
         uint price;
         uint payout;
         bool expired;
@@ -42,7 +45,8 @@ contract FlightSuretyData {
 
 
     mapping(bytes32 => InsuranceContract[]) private insuranceContracts;
-    mapping(bytes32 => mapping(address => InsuranceContract)) insuranceContractsLookup;
+    mapping(bytes32 => mapping(address => InsuranceContract)) insuranceContractsLookupByFlightAccount;
+    mapping(address => InsuranceContract[]) insuranceContractsLookupByAccount;
 
     uint private airlineCount;
 
@@ -231,9 +235,24 @@ contract FlightSuretyData {
             string calldata flightNumber, uint timestamp) external view
             returns (uint, uint){
         bytes32 flightKey = getFlightKey(airline, flightNumber, timestamp);
-        InsuranceContract memory policy = insuranceContractsLookup[flightKey][tx.origin];
+        InsuranceContract memory policy = insuranceContractsLookupByFlightAccount[flightKey][tx.origin];
         require(policy.price > 0, "No policy found for account / flight");
         return (policy.price, policy.payout);
+   }
+
+    // Retrieves price, payout amount for existing flight insurance policy
+    function getPolicyDetails(uint index) external view
+            returns (address, address, string memory, uint, uint, uint, bool, bool){
+
+        InsuranceContract memory policy = insuranceContractsLookupByAccount[tx.origin][index];
+        require (policy.account != address(0), "No policy found for this index!");
+        return (policy.account, policy.airline, policy.flight, policy.timestamp, policy.price, policy.payout, policy.expired, policy.paid);
+   }
+
+    // Retrieves # policies for account
+    function getPolicyCount() external view
+            returns (uint){
+        return insuranceContractsLookupByAccount[tx.origin].length;
    }
 
    /**
@@ -246,10 +265,11 @@ contract FlightSuretyData {
         uint price = msg.value;
         address customer = tx.origin;
         bytes32 flightKey = getFlightKey(airline, flightNumber, timestamp);
-        require(insuranceContractsLookup[flightKey][customer].account == address(0), "Customer already purchased a contract for this flight!");
-        InsuranceContract memory newContract = InsuranceContract(customer, price, payout, false, false);
+        require(insuranceContractsLookupByFlightAccount[flightKey][customer].account == address(0), "Customer already purchased a contract for this flight!");
+        InsuranceContract memory newContract = InsuranceContract(customer, airline, flightNumber, timestamp, price, payout, false, false);
         insuranceContracts[flightKey].push(newContract);
-        insuranceContractsLookup[flightKey][customer] = newContract;
+        insuranceContractsLookupByFlightAccount[flightKey][customer] = newContract;
+        insuranceContractsLookupByAccount[customer].push(newContract);
     }
 
     /**

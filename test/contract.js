@@ -24,6 +24,10 @@ contract('Contract Tests', async (accounts) => {
             success = false;
         }
         assert.equal(success, false, "User should not be able to purchase contract on non-existing flight!");
+
+        // Confirm no policies for this account
+        const policyCount = await config.flightSuretyApp.getPolicyCount({from: config.owner});
+        assert.equal(policyCount, 0, "There should be no policies for this account");
     })
 
     it(`(contract) User can purchase a contract for an existing flight`, async function () {
@@ -36,6 +40,19 @@ contract('Contract Tests', async (accounts) => {
         await config.flightSuretyApp.buy.sendTransaction(firstAirline, flightNumber, flightTime, {from: config.owner, value: price});
         // const contractAmount = await config.flightSuretyApp.getExistingInsuranceContract.call(firstAirline, flightNumber, flightTime, {from: config.owner});
         // assert.equal(contractAmount, price, "Insurance policy should be for same amount as price");
+
+        // Confirm 1 policy for this account
+        const policyCount = await config.flightSuretyApp.getPolicyCount.call({from: config.owner});
+        assert.equal(policyCount, 1, "There should be no policies for this account");
+
+        const policyDetails = await config.flightSuretyApp.getPolicyDetails(0, {from: config.owner});
+        assert.equal(policyDetails[0], config.owner);
+        assert.equal(policyDetails[1], firstAirline);
+        assert.equal(policyDetails[2], flightNumber);
+        assert.equal(policyDetails[3], flightTime);
+        assert.equal(policyDetails[4], price);
+        assert.equal(policyDetails[6], false); // Expired
+        assert.equal(policyDetails[6], false); // Paid
     })
 
     it(`(contract) Payout for 1wei policy should be 2wei`, async function () {

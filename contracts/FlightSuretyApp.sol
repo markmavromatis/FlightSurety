@@ -199,6 +199,13 @@ contract FlightSuretyApp {
                 timestamp);
    }
 
+    function getPolicyDetails(uint i) external view returns (address, address, string memory, uint, uint, uint, bool, bool) {
+        return dataContract.getPolicyDetails(i);
+    }
+
+    function getPolicyCount() external view returns (uint){
+        return dataContract.getPolicyCount();
+   }
 
 // region ORACLE MANAGEMENT
 
