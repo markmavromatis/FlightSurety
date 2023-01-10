@@ -6,6 +6,10 @@ import ServerApi from './serverApi';
 
 (async() => {
 
+    let status = {
+        onlineStatus: true,
+        details: ""
+    };
     let result = null;
 
     let contract = new Contract('localhost', () => {
@@ -36,13 +40,25 @@ import ServerApi from './serverApi';
     $('button[data-bs-target="#flights"]').on('shown.bs.tab', function(e){
         console.log('Flights will be visible now!');
         let serverApi = new ServerApi('localhost', contract.firstAirlineAddress);
-        displayFlights(serverApi.getFlights());
+        displayFlights(serverApi.getFlights(), {});
     });
 
     $('button[data-bs-target="#policies"]').on('shown.bs.tab', function(e){
         console.log('New tab will be visible now!');
     });
     
+
+    console.log("Checking connectivity with blockchain...");
+    contract.web3.eth.net.isListening()
+    .then(() => {
+        console.log("Web3 interface connection confirmed!")
+    }) // Do nothing)
+    .catch(e => {
+        status.onlineStatus = false;
+        status.description = "Web3 interface is down. Check blockchain connectivity!"
+        const systemStatusSpan = DOM.elid("systemStatus");
+        systemStatusSpan.appendChild(DOM.h4(status.description));
+    });
 
 })();
 
@@ -77,7 +93,7 @@ function displayAirlines(airlines) {
     })
 }
 
-function displayFlights(flights) {
+function displayFlights(flights, contracts) {
 
     let displayTable = DOM.elid("flights-table-body");
     flights.map((result, i) => {
@@ -91,10 +107,30 @@ function displayFlights(flights) {
         let cell4 = newRow.insertCell(3);
         cell4.innerHTML = result.destination;
         let cell5 = newRow.insertCell(4);
-        const departure = result.departureDate + " " + result.departureTime + " " + result.departureTimeZone;
-        cell5.innerHTML = departure;
+        cell5.innerHTML = result.departureTime;
         let cell6 = newRow.insertCell(5);
-        cell6.innerHTML = "Unknown";
+        cell6.innerHTML = result.status;
+        if (result.status == "Unknown") {
+            // Add "Check Status" button
+            var checkStatusButton = document.createElement('button');
+            checkStatusButton.textContent = 'Check Status';
+            checkStatusButton.addEventListener("click", () => {
+                console.log("Checking status...");
+            });
+            cell6.appendChild(checkStatusButton);
+        }
+        const hasContract = contracts[result.flightNumber] != undefined
+                && contracts[result.flightNumber][result.departureTime] != undefined;
+        let cell7 = newRow.insertCell(6);
+        cell7.innerHTML = hasContract ? "Yes" : "No";
+        var btn = document.createElement('button');
+        btn.textContent = 'Buy';
+        btn.addEventListener("click", () => {
+            contracts[result.flightNumber] = {};
+            contracts[result.flightNumber][result.departureTime] = 1;
+            cell7.innerHTML = "Yes";
+        });
+        cell7.appendChild(btn);
     })
 }
 

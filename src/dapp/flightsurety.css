@@ -40,3 +40,7 @@ label.form {
 input {
     margin-right: 30px;
 }
+
+span.alert {
+    color: red
+}
