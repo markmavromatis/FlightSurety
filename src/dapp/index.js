@@ -178,7 +178,7 @@ function displayPolicies(contracts) {
     for (let i = 0; i < numberRows; i++) {
         displayTable.deleteRow(0);
     }
-    flights.map((result, i) => {
+    contracts.map((result, i) => {
         let newRow = displayTable.insertRow(-1);
         let cell1 = newRow.insertCell(0);
         cell1.innerHTML = i + 1;
