@@ -24,11 +24,14 @@ import ServerApi from './serverApi';
         // User-submitted transaction
         DOM.elid('submit-oracle').addEventListener('click', () => {
             let flight = DOM.elid('flight-number').value;
-            // Write transaction
+            // Fetch flight status
             contract.fetchFlightStatus(flight, (error, result) => {
                 display('Oracles', 'Trigger oracles', [ { label: 'Fetch Flight Status', error: error, value: result.flight + ' ' + result.timestamp} ]);
             });
         })
+
+        let serverApi = new ServerApi('localhost', contract.firstAirlineAddress);
+        displayAirlines(serverApi.getAirlines());
     });
 
     $('button[data-bs-target="#airlines"]').on('shown.bs.tab', function(e){
@@ -40,11 +43,13 @@ import ServerApi from './serverApi';
     $('button[data-bs-target="#flights"]').on('shown.bs.tab', function(e){
         console.log('Flights will be visible now!');
         let serverApi = new ServerApi('localhost', contract.firstAirlineAddress);
-        displayFlights(serverApi.getFlights(), {});
+        displayFlights(serverApi.getFlights(), {}, contract);
     });
 
     $('button[data-bs-target="#policies"]').on('shown.bs.tab', function(e){
-        console.log('New tab will be visible now!');
+        console.log('Policies will be visible now!');
+        // let serverApi = new ServerApi('localhost', contract.firstAirlineAddress);
+        displayPolicies([]);
     });
     
 
@@ -59,6 +64,7 @@ import ServerApi from './serverApi';
         const systemStatusSpan = DOM.elid("systemStatus");
         systemStatusSpan.appendChild(DOM.h4(status.description));
     });
+
 
 })();
 
@@ -82,6 +88,10 @@ function display(title, description, results) {
 function displayAirlines(airlines) {
 
     let displayTable = DOM.elid("airlines-table-body");
+    let numberRows = displayTable.rows.length;
+    for (let i = 0; i < numberRows; i++) {
+        displayTable.deleteRow(0);
+    }
     airlines.map((result) => {
         let newRow = displayTable.insertRow(0);
         let cell1 = newRow.insertCell(0);
@@ -93,9 +103,81 @@ function displayAirlines(airlines) {
     })
 }
 
-function displayFlights(flights, contracts) {
+function displayFlights(flights, contracts, contractsApi) {
 
     let displayTable = DOM.elid("flights-table-body");
+    let numberRows = displayTable.rows.length;
+    for (let i = 0; i < numberRows; i++) {
+        displayTable.deleteRow(0);
+    }
+    flights.map((result, i) => {
+        let newRow = displayTable.insertRow(-1);
+        let cell1 = newRow.insertCell(0);
+        cell1.innerHTML = i + 1;
+        let cell2 = newRow.insertCell(1);
+        cell2.innerHTML = result.flightNumber;
+        let cell3 = newRow.insertCell(2);
+        cell3.innerHTML = result.origin;
+        let cell4 = newRow.insertCell(3);
+        cell4.innerHTML = result.destination;
+        let cell5 = newRow.insertCell(4);
+        cell5.innerHTML = result.departureTime;
+        let cell6 = newRow.insertCell(5);
+        cell6.innerHTML = result.status;
+        if (result.status == "Unknown") {
+            // Add "Check Status" button
+            var checkStatusButton = document.createElement('button');
+            checkStatusButton.textContent = 'Check Status';
+            checkStatusButton.addEventListener("click", () => {
+                try {
+                    contractsApi.registerFlight("", result.flightNumber, result.departureTime, (error, result) => {
+                        console.log("Registered flight");
+                    });
+                } catch (e) {
+                    // Do nothing
+                    console.error("Error: " + e);
+                }
+                contractsApi.fetchFlightStatus("", result.flightNumber, result.departureTime, (error, result) => {
+                    console.log('Oracles', 'Trigger oracles', [ { label: 'Fetch Flight Status', error: error, value: result.flight + ' ' + result.timestamp} ]);
+                });
+
+                // console.log("Checking status...");
+            });
+            cell6.appendChild(checkStatusButton);
+            // Add "Get Status" button
+            var getStatusButton = document.createElement('button');
+            getStatusButton.textContent = 'Get Status';
+            getStatusButton.addEventListener("click", () => {
+                contractsApi.getFlightStatus("",result.flightNumber, result.departureTime, (error, statusResult) => {
+                    console.log("Status is now: " + JSON.stringify(statusResult));
+                });
+
+                // console.log("Checking status...");
+            });
+            cell6.appendChild(getStatusButton);
+        }
+        const hasContract = contracts[result.flightNumber] != undefined
+                && contracts[result.flightNumber][result.departureTime] != undefined;
+        let cell7 = newRow.insertCell(6);
+        cell7.innerHTML = hasContract ? "Yes" : "No";
+        var btn = document.createElement('button');
+        btn.textContent = 'Buy';
+        btn.addEventListener("click", () => {
+            contracts[result.flightNumber] = {};
+            contracts[result.flightNumber][result.departureTime] = 1;
+            cell7.innerHTML = "Yes";
+        });
+        cell7.appendChild(btn);
+    })
+}
+
+function displayPolicies(contracts) {
+
+    let displayTable = DOM.elid("policies-table-body");
+    let numberRows = displayTable.rows.length;
+    for (let i = 0; i < numberRows; i++) {
+        displayTable.deleteRow(0);
+    }
     flights.map((result, i) => {
         let newRow = displayTable.insertRow(-1);
         let cell1 = newRow.insertCell(0);
@@ -133,9 +215,3 @@ function displayFlights(flights, contracts) {
         cell7.appendChild(btn);
     })
 }
-
-
-
-
-
-

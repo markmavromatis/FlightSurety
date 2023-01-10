@@ -36,18 +36,13 @@ export default class Contract {
             let self = this;
             // Check airline count
             console.log("Retrieving airline count...");
-            try {
-                self.flightSuretyData.methods.getAirlineCount()
-                .call((error, result) => {
-                    if (error) {
-                        console.log("ERROR = " + error);
-                        console.log("RESULT = " + result);
-                    }
-                    callback(error, result);
-                })
-            } catch (e) {
-                console.error("ERROR: " + e);
-            }
+            self.getAirlineCount((error, result) => {
+                if (error) {
+                    console.log("ERROR = " + error);
+                } else {
+                    console.log("RESULT = " + result);
+                }
+            })
             callback();
         });
     }
@@ -59,17 +54,52 @@ export default class Contract {
             .call({ from: self.owner}, callback);
     }
 
-    fetchFlightStatus(flight, callback) {
+    fetchFlightStatus(airline, flight, timestamp, callback) {
         let self = this;
         let payload = {
             airline: self.airlines[0],
             flight: flight,
-            timestamp: Math.floor(Date.now() / 1000)
+            timestamp: Math.floor(new Date(timestamp).getTime() / 1000)
         } 
+        console.log(JSON.stringify(payload));
         self.flightSuretyApp.methods
-            .fetchFlightStatus(payload.airline, payload.flight, payload.timestamp)
+            .fetchFlightStatusFromOracles(payload.airline, payload.flight, payload.timestamp)
             .send({ from: self.owner}, (error, result) => {
                 callback(error, payload);
+            });
+    }
+
+    getFlightStatus(airline, flight, timestamp, callback) {
+        let self = this;
+        let payload = {
+            airline: self.airlines[0],
+            flight: flight,
+            timestamp: Math.floor((new Date(timestamp)).getTime() / 1000)
+        }
+        console.log("** Inside getFlightStatus\n" + JSON.stringify(payload));
+        self.flightSuretyApp.methods
+            .getFlightStatus(payload.airline, payload.flight, payload.timestamp)
+            .call({ from: self.owner}, (error, result) => {
+                console.log("****** Error = " + error);
+                console.log("****** Result = " + result);
+                callback(error, result);
+            });
+    }
+
+    registerFlight(airline, flight, timestamp, callback) {
+        let self = this;
+        let payload = {
+            airline: self.airlines[0],
+            flight: flight,
+            timestamp: Math.floor((new Date(timestamp)).getTime() / 1000)
+        }
+        console.log("** Inside registerFlight\n" + JSON.stringify(payload));
+        self.flightSuretyApp.methods
+            .registerFlight(payload.airline, payload.flight, payload.timestamp)
+            .send({ from: self.owner, gas: 1000000}, (error, result) => {
+                console.log("****** Error = " + error);
+                console.log("****** Result = " + result);
+                callback(error, result);
             });
     }
 
