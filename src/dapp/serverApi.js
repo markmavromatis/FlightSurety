@@ -28,6 +28,11 @@ export default class ServerApi {
         return FlightsData;
     }
 
+    async pingServer() {
+        const url = `${this.baseUrl}/api`;
+        await fetch(url, { method: "GET"});
+    }
+
     async registerOracles() {
         console.log("Inside method registerOracles...");
         console.log("Base URL is: " + this.baseUrl)

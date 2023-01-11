@@ -33,16 +33,6 @@ export default class Contract {
                 this.passengers.push(accts[counter++]);
             }
 
-            let self = this;
-            // Check airline count
-            console.log("Retrieving airline count...");
-            self.getAirlineCount((error, result) => {
-                if (error) {
-                    console.log("ERROR = " + error);
-                } else {
-                    console.log("RESULT = " + result);
-                }
-            })
             callback();
         });
     }

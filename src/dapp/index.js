@@ -7,21 +7,29 @@ import ServerApi from './serverApi';
 let status = {
     online: false,
     blockchainConnectivity: false,
-    oraclesRegistered: false
+    contractsAvailable: false,
+    inOperation: false,
+    oraclesRegistered: false,
+    serverUp: false
 };
 
 function updateSystemStatus() {
     const systemStatusSpan = DOM.elid("systemStatus");
-    console.log("Blockchain connectivity is: " + status.blockchainConnectivity);
     status.onlineStatus = false;
     let description = "";
-    if (status.blockchainConnectivity && status.oraclesRegistered) {
-        description = '';
-        status.onlineStatus = true;
-    } else if (!status.blockchainConnectivity) {
+    if (!status.blockchainConnectivity) {
         description = "Web3 interface is down. Check blockchain connectivity!"
+    } else if (!status.contractsAvailable) {
+        description = "Contracts not available in blockchain!";
+    } else if (!status.inOperation) {
+        description = "Surety smart contracts are not operational!";
+    } else if (!status.serverUp) {
+        description = "Server is down!";
     } else if (!status.oraclesRegistered) {
         description = "Oracles are not yet registered!";
+    } else {
+        description = '';
+        status.onlineStatus = true;
     }
     status.description = description;
     systemStatusSpan.textContent = description;
@@ -51,18 +59,14 @@ function updateSystemStatus() {
         })
 
         DOM.elid('registerOracles').addEventListener('click', async () => {
-            console.log("TEST 1-2-3");
             let serverApi = new ServerApi('localhost', 3000, contract.firstAirlineAddress);
             const oraclesCount = await serverApi.registerOracles();
             console.log("Registered " + oraclesCount + " oracles!");
             console.log("Registering Oracle event listener...");
             await serverApi.registerOracleListener();
             const result = await serverApi.oraclesReady()
-            console.log("HTTP RESPONSE is: " + JSON.stringify(result));
             status.oraclesRegistered = result.status;
-            console.log("ORACLES STATUS is: " + status.oraclesRegistered);
             updateSystemStatus();
-            console.log("Complete");
         })
 
         let serverApi = new ServerApi('localhost', 3000, contract.firstAirlineAddress);
@@ -90,15 +94,48 @@ function updateSystemStatus() {
 
     console.log("Checking connectivity with blockchain...");
     contract.web3.eth.net.isListening()
-    .then(() => {
+    .then(async () => {
         console.log("Web3 interface connection confirmed!")
         status.blockchainConnectivity = true;
-        updateSystemStatus();
-    }) // Do nothing, blockchain is offline.
-    .catch(e => {
-        updateSystemStatus();
-    });
 
+        // Check if contracts loaded
+        contract.isOperational(async (error, result) => {
+            if (error){
+                status.contractsAvailable = false;
+            } else {
+                status.contractsAvailable = true;
+                status.inOperation = result;
+
+                // Now check that server is running...
+                let serverApi = new ServerApi('localhost', 3000, contract.firstAirlineAddress);
+                try {
+                    console.log("Connecting...");
+                    serverApi.pingServer()
+                    .then((err, response) => {
+                        console.log("Error: " + JSON.stringify(err));
+                        console.log("Response: " + JSON.stringify(response));
+                        status.serverUp = true;
+                        updateSystemStatus();
+                    })
+                    .catch((e) => {
+                        console.log("**** ERROR ping");
+                        status.serverUp = false;
+                        updateSystemStatus();
+                    })
+                } catch (e) {
+                    status.serverUp = false;
+                }
+            };
+
+            updateSystemStatus();
+        });
+
+    })
+    .catch(() => {
+        // Blockchain offline
+        // If web3 isn't connecting, status updated here
+        updateSystemStatus();
+    })
 
 
     function displayFlights(flights) {
