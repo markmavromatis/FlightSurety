@@ -13,7 +13,7 @@
       "airline": "United Airlines",
       "origin": "EWR",
       "destination": "SFO",
-      "departureTime": "Mar 1, 2023 2:10pm EST",
+      "departureTime": "Mar 1, 2023 14:10 EST",
       "status": "Unknown"
     },
     {
@@ -21,7 +21,7 @@
       "airline": "Delta Airlines",
       "origin": "JFK",
       "destination": "SFO",
-      "departureTime": "Mar 1, 2023 2:10pm EST",
+      "departureTime": "Mar 1, 2023 14:10 EST",
       "status": "Unknown"
     },
     {
@@ -29,7 +29,7 @@
       "airline": "Delta Airlines",
       "origin": "JFK",
       "destination": "HNL",
-      "departureTime": "Mar 1, 2023 9:00am EST",
+      "departureTime": "Mar 1, 2023 9:00 EST",
       "status": "Unknown"
     },
     {
@@ -37,7 +37,7 @@
       "airline": "Delta Airlines",
       "origin": "JFK",
       "destination": "LHR",
-      "departureTime": "Mar 1, 2023 8:15am EST",
+      "departureTime": "Mar 1, 2023 8:15 EST",
       "status": "Unknown"
     },
     {
@@ -45,6 +45,6 @@
       "airline": "Delta Airlines",
       "origin": "JFK",
       "destination": "LIS",
-      "departureTime": "Mar 1, 2023 8:00pm EST",
+      "departureTime": "Mar 1, 2023 20:00 EST",
       "status": "Unknown"
     }]

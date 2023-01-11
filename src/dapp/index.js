@@ -4,12 +4,32 @@ import './flightsurety.css';
 
 import ServerApi from './serverApi';
 
+let status = {
+    online: false,
+    blockchainConnectivity: false,
+    oraclesRegistered: false
+};
+
+function updateSystemStatus() {
+    const systemStatusSpan = DOM.elid("systemStatus");
+    console.log("Blockchain connectivity is: " + status.blockchainConnectivity);
+    status.onlineStatus = false;
+    let description = "";
+    if (status.blockchainConnectivity && status.oraclesRegistered) {
+        description = '';
+        status.onlineStatus = true;
+    } else if (!status.blockchainConnectivity) {
+        description = "Web3 interface is down. Check blockchain connectivity!"
+    } else if (!status.oraclesRegistered) {
+        description = "Oracles are not yet registered!";
+    }
+    status.description = description;
+    systemStatusSpan.textContent = description;
+}
+
 (async() => {
 
-    let status = {
-        onlineStatus: true,
-        details: ""
-    };
+
     let result = null;
 
     let contract = new Contract('localhost', () => {
@@ -30,7 +50,22 @@ import ServerApi from './serverApi';
             });
         })
 
-        let serverApi = new ServerApi('localhost', contract.firstAirlineAddress);
+        DOM.elid('registerOracles').addEventListener('click', async () => {
+            console.log("TEST 1-2-3");
+            let serverApi = new ServerApi('localhost', 3000, contract.firstAirlineAddress);
+            const oraclesCount = await serverApi.registerOracles();
+            console.log("Registered " + oraclesCount + " oracles!");
+            console.log("Registering Oracle event listener...");
+            await serverApi.registerOracleListener();
+            const result = await serverApi.oraclesReady()
+            console.log("HTTP RESPONSE is: " + JSON.stringify(result));
+            status.oraclesRegistered = result.status;
+            console.log("ORACLES STATUS is: " + status.oraclesRegistered);
+            updateSystemStatus();
+            console.log("Complete");
+        })
+
+        let serverApi = new ServerApi('localhost', 3000, contract.firstAirlineAddress);
         displayAirlines(serverApi.getAirlines());
     });
 
@@ -57,13 +92,91 @@ import ServerApi from './serverApi';
     contract.web3.eth.net.isListening()
     .then(() => {
         console.log("Web3 interface connection confirmed!")
-    }) // Do nothing)
+        status.blockchainConnectivity = true;
+        updateSystemStatus();
+    }) // Do nothing, blockchain is offline.
     .catch(e => {
-        status.onlineStatus = false;
-        status.description = "Web3 interface is down. Check blockchain connectivity!"
-        const systemStatusSpan = DOM.elid("systemStatus");
-        systemStatusSpan.appendChild(DOM.h4(status.description));
+        updateSystemStatus();
     });
+
+
+
+    function displayFlights(flights) {
+
+        let displayTable = DOM.elid("flights-table-body");
+        let numberRows = displayTable.rows.length;
+        for (let i = 0; i < numberRows; i++) {
+            displayTable.deleteRow(0);
+        }
+        flights.map((result, i) => {
+            let newRow = displayTable.insertRow(-1);
+            let cell1 = newRow.insertCell(0);
+            cell1.innerHTML = i + 1;
+            let cell2 = newRow.insertCell(1);
+            cell2.innerHTML = result.flightNumber;
+            let cell3 = newRow.insertCell(2);
+            cell3.innerHTML = result.origin;
+            let cell4 = newRow.insertCell(3);
+            cell4.innerHTML = result.destination;
+            let cell5 = newRow.insertCell(4);
+            cell5.innerHTML = result.departureTime;
+            let cell6 = newRow.insertCell(5);
+            cell6.innerHTML = result.status;
+            if (result.status == "Unknown") {
+                // Add "Check Status" button
+                var checkStatusButton = document.createElement('button');
+                checkStatusButton.textContent = 'Check Status';
+                checkStatusButton.addEventListener("click", () => {
+                    try {
+                        contract.registerFlight("", result.flightNumber, result.departureTime, (error, result) => {
+                            console.log("Registered flight");
+                        });
+                    } catch (e) {
+                        // Do nothing
+                        console.error("Error: " + e);
+                    }
+                    contract.fetchFlightStatus("", result.flightNumber, result.departureTime, (error, result) => {
+                        console.log('Oracles', 'Trigger oracles', [ { label: 'Fetch Flight Status', error: error, value: result.flight + ' ' + result.timestamp} ]);
+                    });
+                });
+                cell6.appendChild(checkStatusButton);
+                // Add "Get Status" button
+                var getStatusButton = document.createElement('button');
+                getStatusButton.textContent = 'Get Status';
+                getStatusButton.addEventListener("click", () => {
+                    console.log("Getting flight for: " + result.flightNumber + " " + result.departureTime);
+                    try {
+                        contract.getFlightStatus("",result.flightNumber, result.departureTime, (error, statusResult) => {
+                            console.log("Status is now: " + statusResult);
+                            if (statusResult != 0) {
+                                flights[i].status = statusResult;
+                                console.log("First airline address is: " + contract.firstAirlineAddress);
+                                let serverApi = new ServerApi('localhost', contract.firstAirlineAddress);
+                                displayFlights(serverApi.getFlights());
+                            }
+                        });
+                    } catch {
+                        // Flight not queried yet. Do nothing.
+                    }
+    
+                    // console.log("Checking status...");
+                });
+                cell6.appendChild(getStatusButton);
+            }
+            // const hasContract = contracts[result.flightNumber] != undefined
+            //         && contracts[result.flightNumber][result.departureTime] != undefined;
+            // let cell7 = newRow.insertCell(6);
+            // cell7.innerHTML = hasContract ? "Yes" : "No";
+            // var btn = document.createElement('button');
+            // btn.textContent = 'Buy';
+            // btn.addEventListener("click", () => {
+            //     contracts[result.flightNumber] = {};
+            //     contracts[result.flightNumber][result.departureTime] = 1;
+            //     cell7.innerHTML = "Yes";
+            // });
+            // cell7.appendChild(btn);
+        })
+    }
 
 
 })();
@@ -103,73 +216,7 @@ function displayAirlines(airlines) {
     })
 }
 
-function displayFlights(flights, contracts, contractsApi) {
 
-    let displayTable = DOM.elid("flights-table-body");
-    let numberRows = displayTable.rows.length;
-    for (let i = 0; i < numberRows; i++) {
-        displayTable.deleteRow(0);
-    }
-    flights.map((result, i) => {
-        let newRow = displayTable.insertRow(-1);
-        let cell1 = newRow.insertCell(0);
-        cell1.innerHTML = i + 1;
-        let cell2 = newRow.insertCell(1);
-        cell2.innerHTML = result.flightNumber;
-        let cell3 = newRow.insertCell(2);
-        cell3.innerHTML = result.origin;
-        let cell4 = newRow.insertCell(3);
-        cell4.innerHTML = result.destination;
-        let cell5 = newRow.insertCell(4);
-        cell5.innerHTML = result.departureTime;
-        let cell6 = newRow.insertCell(5);
-        cell6.innerHTML = result.status;
-        if (result.status == "Unknown") {
-            // Add "Check Status" button
-            var checkStatusButton = document.createElement('button');
-            checkStatusButton.textContent = 'Check Status';
-            checkStatusButton.addEventListener("click", () => {
-                try {
-                    contractsApi.registerFlight("", result.flightNumber, result.departureTime, (error, result) => {
-                        console.log("Registered flight");
-                    });
-                } catch (e) {
-                    // Do nothing
-                    console.error("Error: " + e);
-                }
-                contractsApi.fetchFlightStatus("", result.flightNumber, result.departureTime, (error, result) => {
-                    console.log('Oracles', 'Trigger oracles', [ { label: 'Fetch Flight Status', error: error, value: result.flight + ' ' + result.timestamp} ]);
-                });
-
-                // console.log("Checking status...");
-            });
-            cell6.appendChild(checkStatusButton);
-            // Add "Get Status" button
-            var getStatusButton = document.createElement('button');
-            getStatusButton.textContent = 'Get Status';
-            getStatusButton.addEventListener("click", () => {
-                contractsApi.getFlightStatus("",result.flightNumber, result.departureTime, (error, statusResult) => {
-                    console.log("Status is now: " + JSON.stringify(statusResult));
-                });
-
-                // console.log("Checking status...");
-            });
-            cell6.appendChild(getStatusButton);
-        }
-        const hasContract = contracts[result.flightNumber] != undefined
-                && contracts[result.flightNumber][result.departureTime] != undefined;
-        let cell7 = newRow.insertCell(6);
-        cell7.innerHTML = hasContract ? "Yes" : "No";
-        var btn = document.createElement('button');
-        btn.textContent = 'Buy';
-        btn.addEventListener("click", () => {
-            contracts[result.flightNumber] = {};
-            contracts[result.flightNumber][result.departureTime] = 1;
-            cell7.innerHTML = "Yes";
-        });
-        cell7.appendChild(btn);
-    })
-}
 
 function displayPolicies(contracts) {
 

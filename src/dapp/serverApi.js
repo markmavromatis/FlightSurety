@@ -2,10 +2,12 @@ import Config from './config.json';
 import FlightsData from '../shared/flightsData.json';
 
 export default class ServerApi {
-    constructor(network, firstAirlineAddress) {
-        console.log("Network is: " + network);
+    constructor(host, port, firstAirlineAddress) {
+        console.log("Host is: " + host);
+        this.host = host;
+        this.port = port;
+        this.baseUrl = `http://${host}:${port}`;
         console.log("First airline address is: " + firstAirlineAddress);
-        let config = Config[network];
         // let serverPort = Config[network];
         this.firstAirlineAddress = firstAirlineAddress;
         this.initialize();
@@ -24,6 +26,32 @@ export default class ServerApi {
 
     getFlights() {
         return FlightsData;
+    }
+
+    async registerOracles() {
+        console.log("Inside method registerOracles...");
+        console.log("Base URL is: " + this.baseUrl)
+        const url = `${this.baseUrl}/api/registerOracles`;
+        const res = await fetch(url, { method: "POST"})
+        const data = await res.json()
+        return data.count;
+    }
+
+    async registerOracleListener() {
+        console.log("Inside method registerOracleListener...");
+        console.log("Base URL is: " + this.baseUrl)
+        const url = `${this.baseUrl}/api/registerOracleListener`;
+        const res = await fetch(url, { method: "POST"})
+        const data = await res.json()
+        return data.count;
+    }
+    async oraclesReady() {
+        console.log("Inside method oraclesReady...");
+        console.log("Base URL is: " + this.baseUrl)
+        const url = `${this.baseUrl}/api/oraclesReady`;
+        const res = await fetch(url, { method: "GET"})
+        const data = await res.json()
+        return data;
     }
 
 }

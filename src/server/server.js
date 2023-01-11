@@ -34,31 +34,57 @@ web3.eth.net.isListening()
 
 async function registerOracles() {
   console.log("Registering Oracles...");
-  oracleService.registerOracles();
+  await oracleService.registerOracles();
+  return oracleService.oracles.length;
+}
+
+async function registerOracleListener() {
+  console.log("Registering Oracle Listener......");
+  await oracleService.registerOracleListener();
 }
 
 const app = express();
-app.use(cors);
+app.use(cors())
+
 app.get('/api', (req, res) => {
     res.send({
       message: 'An API for use with your Dapp!'
     })
 })
 
-app.get('/api/oraclesRegistered', async (req, res) => {
-  console.log("Inside method registerOracles...");
-  res.send({status: oracleService.oraclesRegistered});
+app.get('/api/oraclesReady', async (req, res) => {
+  const result = await oracleService.areOraclesReady();
+  res.send({
+    status: result
+  })
 })
 
 
 app.post('/api/registerOracles', async (req, res) => {
   console.log("Inside method registerOracles...");
-  await registerOracles();
-  res.send({
-    message: "Oracles registered!"
-  })
+  try {
+    const result = await registerOracles();
+    console.log("Result is: " + result);
+    const response = {message: "Oracles registered!", count: result};
+    console.log("Returning response: " + JSON.stringify(response));
+    res.json(response);
+  } catch (e) {
+    console.error(e);
+  }
 })
 
+app.post('/api/registerOracleListener', async (req, res) => {
+  console.log("Inside method registerOracleListener...");
+  try {
+    const result = await registerOracleListener();
+    console.log("Result is: " + result);
+    const response = {message: "Oracle listener registered!"};
+    console.log("Returning response: " + JSON.stringify(response));
+    res.json(response);
+  } catch (e) {
+    console.error(e);
+  }
+})
 
 export default app;
 

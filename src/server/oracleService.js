@@ -6,7 +6,9 @@ export default class OracleService {
     constructor(accounts, flightSuretyApp) {
         this.oracles = [];
         this.oraclesRegistered = false;
+        this.oracleListenerRegistered = false;
         this.flightSuretyApp = flightSuretyApp;
+
         const requiredAccountsLength = ORACLE_COUNT + 1
         if (requiredAccountsLength > accounts.length) {
           throw new Error(`Oracle registration requires access to at least ${requiredAccountsLength} accounts`);
@@ -19,12 +21,21 @@ export default class OracleService {
           
     };
 
+    areOraclesReady() {
+      console.log("Oracle registered?" + this.oraclesRegistered);
+      console.log("Listener registered?" + this.oracleListenerRegistered);
+      return this.oraclesRegistered && this.oracleListenerRegistered;
+    }
+
     async registerOracles() {
         console.log("Registering Oracles...");
         for (let i = 0; i < this.oracles.length; i++) {
             const oracle = this.oracles[i];
             await this.flightSuretyApp.methods.registerOracle()
-            .send({ from: oracle.address, gas: 1000000, value: REGISTRATION_FEE}, (error, result) => {
+            .send({ from: oracle.address, value: REGISTRATION_FEE,
+                "gas": 4800000,
+                "gasPrice": 100000000000
+            }, (error, result) => {
                 if (error) {
                 throw new Error("Failed to register oracle. Reason: " + error);
                 }
@@ -48,9 +59,9 @@ export default class OracleService {
         
     }
 
-    async registerOracleListeners() {
+    async registerOracleListener() {
       // Event listener for OracleRequest events
-      this.flightSuretyApp.events.OracleRequest()
+      await this.flightSuretyApp.events.OracleRequest()
       .on('data', event => {
 
         console.log("***** EVENT")
@@ -74,7 +85,8 @@ export default class OracleService {
           }
         })
 
-      });
-
+      })
+      this.oracleListenerRegistered = true;
+      return true;
     }
 }
