@@ -28,6 +28,22 @@ export default class ServerApi {
         return FlightsData;
     }
 
+    async getPolicyCount(accountAddress) {
+        const url = `${this.baseUrl}/api/policies/${accountAddress}`;
+        console.log("URL is: " + url);
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.result;
+    }
+
+    async getPolicies(userAddress) {
+        const url = `${this.baseUrl}/api/policies/${userAddress}`;
+        console.log("URL is: " + url);
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.result;
+    }
+
     async pingServer() {
         const url = `${this.baseUrl}/api`;
         await fetch(url, { method: "GET"});

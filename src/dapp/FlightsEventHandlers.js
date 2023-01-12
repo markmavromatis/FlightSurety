@@ -1,11 +1,12 @@
 export default class FlightsEventHandlers {
 
-    constructor(c) {
+    constructor(c, serverApi) {
         this.contract = c;
+        this.serverApi = serverApi;
     }
 
     async buyPolicy(flights, i) {
-        console.log("Buy policy");
+
         const airlineAddress = flights[i].address;
         const flightNumber = flights[i].flightNumber;
         const departureTime = flights[i].departureTime;
@@ -30,22 +31,6 @@ export default class FlightsEventHandlers {
 
         // Update local data model
         flights[i].hasPolicy = true;
-
-        // Let's try to get it back
-        try {
-            const result2 = await this.contract.getPolicy(airlineAddress, flightNumber, departureTime);
-            console.log("Get policy result = " + JSON.stringify(result2));
-        } catch (e) {
-            console.error("Failed in getPolicy call " + e);
-        }
-
-        // How many policies?
-        try {
-            const result3 = await this.contract.getPolicyCount();
-            console.log("Get policy count = " + JSON.stringify(result3));
-        } catch (e) {
-            console.error("Failed in getPolicyCount call " + e);
-        }
 
         return true;
     }

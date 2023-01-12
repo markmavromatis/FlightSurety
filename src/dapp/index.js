@@ -3,6 +3,8 @@ import Contract from './contract';
 import './flightsurety.css';
 import FlightsEventHandlers from './FlightsEventHandlers';
 import ServerApi from './serverApi';
+import Web3 from 'web3';
+import Config from './config.json';
 
 let status = {
     online: false,
@@ -12,7 +14,7 @@ let status = {
     oraclesRegistered: false,
     serverUp: false
 };
-
+let serverApi = null;
 
 function updateSystemStatus() {
     const systemStatusSpan = DOM.elid("systemStatus");
@@ -37,11 +39,21 @@ function updateSystemStatus() {
 }
 
 let flightsEventHandlers;
+let userAccount = null;
 
 (async() => {
 
 
     let result = null;
+    // Set user account initially
+    let network = 'localhost';
+    let config = Config[network];
+    // this.appAddress = config.appAddress;
+    const web3 = new Web3(new Web3.providers.HttpProvider(config.url));
+    web3.eth.getAccounts((error, accts) => {
+        userAccount = accts[0];
+
+    })
 
     let contract = new Contract('localhost', () => {
 
@@ -72,11 +84,12 @@ let flightsEventHandlers;
             updateSystemStatus();
         })
 
-        let serverApi = new ServerApi('localhost', 3000, contract.firstAirlineAddress);
+        serverApi = new ServerApi('localhost', 3000, contract.firstAirlineAddress);
+
         displayAirlines(serverApi.getAirlines());
     });
 
-    flightsEventHandlers = new FlightsEventHandlers(contract);
+    flightsEventHandlers = new FlightsEventHandlers(contract, new ServerApi('localhost', 3000, contract.firstAirlineAddress));
 
     $('button[data-bs-target="#airlines"]').on('shown.bs.tab', function(e){
         console.log('Airlines will be visible now!');
@@ -90,10 +103,11 @@ let flightsEventHandlers;
         displayFlights(serverApi.getFlights(), {}, contract);
     });
 
-    $('button[data-bs-target="#policies"]').on('shown.bs.tab', function(e){
+    $('button[data-bs-target="#policies"]').on('shown.bs.tab', async function(e){
         console.log('Policies will be visible now!');
+        // displayFlights(serverApi.getFlights(), {}, contract);
         // let serverApi = new ServerApi('localhost', contract.firstAirlineAddress);
-        displayPolicies([]);
+        displayPolicies(await serverApi.getPolicies(userAccount));
     });
     
 
@@ -262,47 +276,26 @@ function displayAirlines(airlines) {
 
 
 
-function displayPolicies(contracts) {
+function displayPolicies(policies) {
 
     let displayTable = DOM.elid("policies-table-body");
     let numberRows = displayTable.rows.length;
     for (let i = 0; i < numberRows; i++) {
         displayTable.deleteRow(0);
     }
-    contracts.map((result, i) => {
+    policies.map((result, i) => {
         let newRow = displayTable.insertRow(-1);
         let cell1 = newRow.insertCell(0);
         cell1.innerHTML = i + 1;
         let cell2 = newRow.insertCell(1);
-        cell2.innerHTML = result.flightNumber;
+        cell2.innerHTML = result.flight;
         let cell3 = newRow.insertCell(2);
-        cell3.innerHTML = result.origin;
+        cell3.innerHTML = result.timestamp;
         let cell4 = newRow.insertCell(3);
-        cell4.innerHTML = result.destination;
+        cell4.innerHTML = result.price;
         let cell5 = newRow.insertCell(4);
-        cell5.innerHTML = result.departureTime;
+        cell5.innerHTML = result.payout;
         let cell6 = newRow.insertCell(5);
-        cell6.innerHTML = result.status;
-        if (result.status == "Unknown") {
-            // Add "Check Status" button
-            var checkStatusButton = document.createElement('button');
-            checkStatusButton.textContent = 'Check Status';
-            checkStatusButton.addEventListener("click", () => {
-                console.log("Checking status...");
-            });
-            cell6.appendChild(checkStatusButton);
-        }
-        const hasContract = contracts[result.flightNumber] != undefined
-                && contracts[result.flightNumber][result.departureTime] != undefined;
-        let cell7 = newRow.insertCell(6);
-        cell7.innerHTML = hasContract ? "Yes" : "No";
-        var btn = document.createElement('button');
-        btn.textContent = 'Buy';
-        btn.addEventListener("click", () => {
-            contracts[result.flightNumber] = {};
-            contracts[result.flightNumber][result.departureTime] = 1;
-            cell7.innerHTML = "Yes";
-        });
-        cell7.appendChild(btn);
+        cell6.innerHTML = result.paid;
     })
 }
