@@ -18,6 +18,7 @@ export default class Contract {
     }
 
     initialize(callback) {
+
         this.web3.eth.getAccounts((error, accts) => {
 
             this.owner = accts[0];
@@ -37,6 +38,33 @@ export default class Contract {
         });
     }
 
+    async buyPolicy(airlineAddress, flight, timestamp) {
+        let self = this;
+        console.log("Inside method buy...");
+        const sender = self.owner;
+        console.log("Sender = " + sender);
+        const timestampSolidity = Math.floor(new Date(timestamp).getTime() / 1000);
+        console.log("Address = " + airlineAddress);
+        console.log("Flight = " + flight);
+        console.log("Timestamp = " + timestampSolidity);
+        console.log("Sender = " + sender);
+        return self.flightSuretyApp.methods
+            .buy(airlineAddress, flight, timestampSolidity)
+            .send({ from: sender, gas: 1000000, value: "1"})
+    }
+
+    async getPolicy(airlineAddress, flight, timestamp) {
+        let self = this;
+        console.log("Inside method getPolicy...");
+        const sender = self.owner;
+        const timestampSolidity = Math.floor(new Date(timestamp).getTime() / 1000);
+        return self.flightSuretyApp.methods
+            .getExistingInsuranceContract(airlineAddress, flight, timestampSolidity)
+            .call({ from: sender}, (error, result) => {
+                // return result;
+            });
+    }
+
     isOperational(callback) {
        let self = this;
        self.flightSuretyApp.methods
@@ -47,7 +75,7 @@ export default class Contract {
     fetchFlightStatus(airline, flight, timestamp, callback) {
         let self = this;
         let payload = {
-            airline: self.airlines[0],
+            airline: airline,
             flight: flight,
             timestamp: Math.floor(new Date(timestamp).getTime() / 1000)
         } 
@@ -59,7 +87,7 @@ export default class Contract {
             });
     }
 
-    getFlightStatus(airline, flight, timestamp, callback) {
+    async getFlightStatus(airline, flight, timestamp) {
         let self = this;
         let payload = {
             airline: self.airlines[0],
@@ -67,19 +95,19 @@ export default class Contract {
             timestamp: Math.floor((new Date(timestamp)).getTime() / 1000)
         }
         console.log("** Inside getFlightStatus\n" + JSON.stringify(payload));
-        self.flightSuretyApp.methods
+        return self.flightSuretyApp.methods
             .getFlightStatus(payload.airline, payload.flight, payload.timestamp)
             .call({ from: self.owner}, (error, result) => {
-                console.log("****** Error = " + error);
-                console.log("****** Result = " + result);
-                callback(error, result);
+                // console.log("****** Error = " + error);
+                // console.log("****** Result = " + result);
+                // return result;
             });
     }
 
     registerFlight(airline, flight, timestamp, callback) {
         let self = this;
         let payload = {
-            airline: self.airlines[0],
+            airline: airline,
             flight: flight,
             timestamp: Math.floor((new Date(timestamp)).getTime() / 1000)
         }
@@ -90,6 +118,20 @@ export default class Contract {
                 console.log("****** Error = " + error);
                 console.log("****** Result = " + result);
                 callback(error, result);
+            });
+    }
+
+    async registerFlight2(airline, flight, timestamp) {
+        let self = this;
+        let payload = {
+            airline: airline,
+            flight: flight,
+            timestamp: Math.floor((new Date(timestamp)).getTime() / 1000)
+        }
+        console.log("** Inside registerFlight\n" + JSON.stringify(payload));
+        return self.flightSuretyApp.methods
+            .registerFlight(payload.airline, payload.flight, payload.timestamp)
+            .send({ from: self.owner, gas: 1000000}, (error, result) => {
             });
     }
 
