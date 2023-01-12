@@ -241,18 +241,18 @@ contract FlightSuretyData {
    }
 
     // Retrieves price, payout amount for existing flight insurance policy
-    function getPolicyDetails(uint index) external view
+    function getPolicyDetails(address accountAddress, uint index) external view
             returns (address, address, string memory, uint, uint, uint, bool, bool){
 
-        InsuranceContract memory policy = insuranceContractsLookupByAccount[tx.origin][index];
+        InsuranceContract memory policy = insuranceContractsLookupByAccount[accountAddress][index];
         require (policy.account != address(0), "No policy found for this index!");
         return (policy.account, policy.airline, policy.flight, policy.timestamp, policy.price, policy.payout, policy.expired, policy.paid);
    }
 
     // Retrieves # policies for account
-    function getPolicyCount() external view
+    function getPolicyCount(address accountAddress) external view
             returns (uint){
-        return insuranceContractsLookupByAccount[tx.origin].length;
+        return insuranceContractsLookupByAccount[accountAddress].length;
    }
 
    /**

@@ -26,7 +26,7 @@ contract('Contract Tests', async (accounts) => {
         assert.equal(success, false, "User should not be able to purchase contract on non-existing flight!");
 
         // Confirm no policies for this account
-        const policyCount = await config.flightSuretyApp.getPolicyCount({from: config.owner});
+        const policyCount = await config.flightSuretyApp.getPolicyCount(config.owner);
         assert.equal(policyCount, 0, "There should be no policies for this account");
     })
 
@@ -35,17 +35,15 @@ contract('Contract Tests', async (accounts) => {
         const flightTime = Math.round((new Date("Jan 1, 2023 12:00")).getTime() / 1000);
         const flightNumber = "UA123";
         const price = 1;
-        console.log("Test addresses: " + config.testAddresses[0]);
+
         await config.flightSuretyApp.registerFlight.sendTransaction(firstAirline, flightNumber, flightTime, {from: config.owner});
         await config.flightSuretyApp.buy.sendTransaction(firstAirline, flightNumber, flightTime, {from: config.owner, value: price});
-        // const contractAmount = await config.flightSuretyApp.getExistingInsuranceContract.call(firstAirline, flightNumber, flightTime, {from: config.owner});
-        // assert.equal(contractAmount, price, "Insurance policy should be for same amount as price");
 
         // Confirm 1 policy for this account
-        const policyCount = await config.flightSuretyApp.getPolicyCount.call({from: config.owner});
+        const policyCount = await config.flightSuretyApp.getPolicyCount.call(config.owner);
         assert.equal(policyCount, 1, "There should be no policies for this account");
 
-        const policyDetails = await config.flightSuretyApp.getPolicyDetails(0, {from: config.owner});
+        const policyDetails = await config.flightSuretyApp.getPolicyDetails(config.owner, 0);
         assert.equal(policyDetails[0], config.owner);
         assert.equal(policyDetails[1], firstAirline);
         assert.equal(policyDetails[2], flightNumber);
@@ -60,7 +58,7 @@ contract('Contract Tests', async (accounts) => {
         const flightTime = Math.round((new Date("Jan 1, 2023 12:00")).getTime() / 1000);
         const flightNumber = "1wei price";
         const price = 1;
-        console.log("Test addresses: " + config.testAddresses[0]);
+
         await config.flightSuretyApp.registerFlight.sendTransaction(firstAirline, flightNumber, flightTime, {from: config.owner});
         await config.flightSuretyApp.buy.sendTransaction(firstAirline, flightNumber, flightTime, {from: config.owner, value: price});
         const results = await config.flightSuretyApp.getExistingInsuranceContract.call(firstAirline, flightNumber, flightTime, {from: config.owner});
