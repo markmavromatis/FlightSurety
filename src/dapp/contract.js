@@ -159,5 +159,10 @@ export default class Contract {
             });
     }
 
-
+    async getPolicyCount() {
+        let self = this;
+        return self.flightSuretyData.methods
+            .getPolicyCount()
+            .call({ from: self.owner}, (error, result) => {});
+    }
 }

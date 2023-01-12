@@ -4,8 +4,11 @@ export default class FlightsEventHandlers {
         this.contract = c;
     }
 
-    async buyPolicy(airlineAddress, flightNumber, departureTime) {
+    async buyPolicy(flights, i) {
         console.log("Buy policy");
+        const airlineAddress = flights[i].address;
+        const flightNumber = flights[i].flightNumber;
+        const departureTime = flights[i].departureTime;
 
         // Check that flight exists
         try {
@@ -25,7 +28,9 @@ export default class FlightsEventHandlers {
             return false;
         }
 
-        console.log("IN BETWEEN");
+        // Update local data model
+        flights[i].hasPolicy = true;
+
         // Let's try to get it back
         try {
             const result2 = await this.contract.getPolicy(airlineAddress, flightNumber, departureTime);
@@ -33,6 +38,15 @@ export default class FlightsEventHandlers {
         } catch (e) {
             console.error("Failed in getPolicy call " + e);
         }
+
+        // How many policies?
+        try {
+            const result3 = await this.contract.getPolicyCount();
+            console.log("Get policy count = " + JSON.stringify(result3));
+        } catch (e) {
+            console.error("Failed in getPolicyCount call " + e);
+        }
+
         return true;
     }
 
@@ -50,4 +64,17 @@ export default class FlightsEventHandlers {
         }
     }
 
+    async getPolicies() {
+        console.log("Retrieving policies...");
+        try {
+            const result = await this.contract.getPolicyCount();
+            console.log("Status is now: " + result);
+            // if (result != 0) {
+            //     flight.status = result;
+            // }
+        } catch (e) {
+            // Flight status not available. Leave a console message and continue.
+            console.error("Error calling getPolicies(): e");
+        }
+    }
 }

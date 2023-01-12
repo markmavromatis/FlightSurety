@@ -193,12 +193,18 @@ let flightsEventHandlers;
                 });
                 cell6.appendChild(getStatusButton);
                 let cell7 = newRow.insertCell(6);
-                var buyPolicyButton = document.createElement('button');
-                buyPolicyButton.textContent = 'Buy';
-                buyPolicyButton.addEventListener("click", async () => {
-                    await flightsEventHandlers.buyPolicy(contract.firstAirlineAddress, result.flightNumber, result.departureTime);
-                })
-                cell7.appendChild(buyPolicyButton);
+                if (flights[i].hasPolicy) {
+                    // TODO: Show a policy here
+                    cell7.textContent = "*";
+                } else {
+                    var buyPolicyButton = document.createElement('button');
+                    buyPolicyButton.textContent = 'Buy';
+                    buyPolicyButton.addEventListener("click", async () => {
+                        await flightsEventHandlers.buyPolicy(flights, i);
+                        displayFlights(flights);
+                    })
+                    cell7.appendChild(buyPolicyButton);
+                }
             }
             // const hasContract = contracts[result.flightNumber] != undefined
             //         && contracts[result.flightNumber][result.departureTime] != undefined;
