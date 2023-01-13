@@ -151,4 +151,16 @@ export default class Contract {
             .getPolicyCount()
             .call({ from: self.owner}, (error, result) => {});
     }
+
+    async getEtherBalance() {
+        let self = this;
+        return self.web3.eth.getBalance(self.owner);
+    }
+
+    // async pay() {
+    //     let self = this;
+    //     return self.flightSuretyData.methods
+    //         .pay()
+    //         .call({ from: self.owner}, (error, result) => {});
+    // }
 }

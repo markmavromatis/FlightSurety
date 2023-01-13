@@ -39,6 +39,7 @@ function updateSystemStatus() {
 }
 
 let flightsEventHandlers;
+let contract;
 
 (async() => {
 
@@ -51,7 +52,7 @@ let flightsEventHandlers;
     const web3 = new Web3(new Web3.providers.HttpProvider(config.url));
     // console.log("Results are: " + JSON.stringify(results))
 
-    let contract = new Contract('localhost', () => {
+    contract = new Contract('localhost', () => {
 
         // Read transaction
         contract.isOperational((error, result) => {
@@ -244,9 +245,15 @@ function displayAirlines(airlines) {
 
 function displayPolicies(policies, balance) {
     console.log("Inside method displayBalance...");
-    console.log(balance);
-    let displayBalance = DOM.elid("display-balance");
-    displayBalance.innerText = balance;
+
+    let displaySuretyBalance = DOM.elid("display-surety-balance");
+    let displayEthereumBalance = DOM.elid("display-ethereum-balance");
+    contract.getEtherBalance()
+    .then((tempBalance) => {displayEthereumBalance.innerText = Number(tempBalance).toLocaleString("en-us")});
+
+    document.getElementById("pay").style.display = balance > 0 ? "" : "none";
+
+    displaySuretyBalance.innerText = balance;
 
     let displayTable = DOM.elid("policies-table-body");
     let numberRows = displayTable.rows.length;
@@ -269,3 +276,7 @@ function displayPolicies(policies, balance) {
         cell6.innerHTML = result.paid;
     })
 }
+
+DOM.elid('pay').addEventListener('click', async () => {
+    contract.pay();
+})
