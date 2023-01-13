@@ -68,7 +68,11 @@ export default class FlightsEventHandlers {
     }
 
     async fetchStatus(flight) {
-        await this.contract.registerFlight(flight.address, flight.flightNumber, flight.departureTime);
+        try {
+            await this.contract.registerFlight(flight.address, flight.flightNumber, flight.departureTime);
+        } catch (e) {
+            // The flight is already registered. Continue to fetch policy.
+        }
         this.contract.fetchFlightStatus(flight.address, flight.flightNumber, flight.departureTime, (error, result) => {
             console.log('Oracles', 'Trigger oracles', [ { label: 'Fetch Flight Status', error: error, value: result.flight + ' ' + result.timestamp} ]);
         });

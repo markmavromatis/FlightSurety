@@ -63,7 +63,9 @@ contract('Contract Tests', async (accounts) => {
         await config.flightSuretyApp.buy.sendTransaction(firstAirline, flightNumber, flightTime, {from: config.owner, value: price});
         const results = await config.flightSuretyApp.getExistingInsuranceContract.call(firstAirline, flightNumber, flightTime, {from: config.owner});
         const payout = results[1];
+        const paid = results[2];
         assert.equal(payout, 2, "1-wei policy should pay out 2-wei");
+        assert.equal(paid, false, "Policy shoudl not be paid (yet)");
     })
 
     it(`(contract) Payout for 2wei policy should be 3wei`, async function () {
@@ -73,10 +75,12 @@ contract('Contract Tests', async (accounts) => {
         const price = 2;
         console.log("Test addresses: " + config.testAddresses[0]);
         await config.flightSuretyApp.registerFlight.sendTransaction(firstAirline, flightNumber, flightTime, {from: config.owner});
-        await config.flightSuretyApp.buy.sendTransaction(firstAirline, flightNumber, flightTime, {from: config.owner, value: price});
+        await config.flightSuretyApp.buy.sendTransaction(firstAirline, flightNumber, flightTime, {from: config.owner, value: price, gas: 1000000});
         const results = await config.flightSuretyApp.getExistingInsuranceContract.call(firstAirline, flightNumber, flightTime, {from: config.owner});
         const payout = results[1];
+        const paid = results[2];
         assert.equal(payout, 3, "2-wei policy should pay out 3-wei");
+        assert.equal(paid, false, "Policy shoudl not be paid (yet)");
     })
 
 })

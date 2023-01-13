@@ -7,13 +7,14 @@ contract('Oracles', async (accounts) => {
 
   const TEST_ORACLES_COUNT = 20;
   var config;
+  const STATUS_CODE_LATE_AIRLINE = 20;
+
   before('setup contract', async () => {
     config = await Test.Config(accounts);
 
     // Watch contract events
     const STATUS_CODE_UNKNOWN = 0;
     const STATUS_CODE_ON_TIME = 10;
-    const STATUS_CODE_LATE_AIRLINE = 20;
     const STATUS_CODE_LATE_WEATHER = 30;
     const STATUS_CODE_LATE_TECHNICAL = 40;
     const STATUS_CODE_LATE_OTHER = 50;
@@ -27,9 +28,10 @@ contract('Oracles', async (accounts) => {
     let fee = await config.flightSuretyApp.REGISTRATION_FEE.call();
 
     // ACT
-    for(let a=1; a<TEST_ORACLES_COUNT; a++) {      
+    for(let a=1; a<TEST_ORACLES_COUNT; a++) {
+      console.log("Account #" + a, accounts[a]);
       await config.flightSuretyApp.registerOracle.sendTransaction({ from: accounts[a], value: fee });
-      let result = await config.flightSuretyApp.getMyIndexes.call({from: accounts[a]});
+      await config.flightSuretyApp.getOracleIndexes.call({from: accounts[a]});
     }
   });
 
@@ -94,17 +96,23 @@ contract('Oracles', async (accounts) => {
     // Confirm payout in policy
     const policy = await config.flightSuretyApp.getExistingInsuranceContract(airline, flight, timestamp, {from: config.owner});
     const payout = parseInt(policy[1]);
+    const paidBefore = policy[2];
+    assert.equal(paidBefore, false, "Policy should be marked as not paid!");
 
     // Confirm account balance before status update
     const balanceBefore = parseInt(await config.flightSuretyApp.getInsuredBalance({from: config.owner}));
 
     // Make request for an on-time flight
-    await makeOracleRequestAndConfirmStatus(airline, flight, timestamp, 20)
+    await makeOracleRequestAndConfirmStatus(airline, flight, timestamp, STATUS_CODE_LATE_AIRLINE)
 
     // Confirm account balance has increased
     const balanceAfter = parseInt(await config.flightSuretyApp.getInsuredBalance({from: config.owner}));
     assert.equal(balanceBefore + payout, balanceAfter, "Insured balance be updated to reflect payout");
 
+    // Check policy fields
+    const policyAfter = await config.flightSuretyApp.getExistingInsuranceContract(airline, flight, timestamp, {from: config.owner});
+    const paid = policyAfter[2];
+    assert.equal(paid, true, "Policy should be marked as paid!");
   })
 
 async function makeOracleRequestAndConfirmStatus(airline, flight, timestamp, targetStatus) {
@@ -129,7 +137,7 @@ async function makeOracleRequestAndConfirmStatus(airline, flight, timestamp, tar
   for(let a=1; a<TEST_ORACLES_COUNT; a++) {
 
     // Get oracle information
-    let oracleIndexes = await config.flightSuretyApp.getMyIndexes.call({ from: accounts[a]});
+    let oracleIndexes = await config.flightSuretyApp.getOracleIndexes.call({ from: accounts[a]});
     for(let idx=0;idx<3;idx++) {
       try {
         // Submit a response...it will only be accepted if there is an Index match

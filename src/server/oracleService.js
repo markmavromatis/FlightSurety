@@ -74,9 +74,10 @@ export default class OracleService {
             const requestFlight = event.returnValues[2];
             const requestTimestamp = event.returnValues[3];
             const requestIndexAsNumber = parseInt(requestIndex);
+
             await this.flightSuretyApp.methods.submitOracleResponse
             (requestIndexAsNumber, requestAirline,requestFlight, requestTimestamp, statusCode)
-            .send({ from: oracle.address, gas: 100000}, (error, result) => {
+            .send({ from: oracle.address, gas: 1000000}, (error, result) => {
               if (error) {
                 throw new Error("Failed to call submitOracleResponse. Reason: " + error);
               } else {

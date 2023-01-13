@@ -153,6 +153,11 @@ contract FlightSuretyApp {
         bytes32 flightKey = dataContract.getFlightKey(airline, flight, timestamp);
         flights[flightKey].updatedTimestamp = timestamp;
         flights[flightKey].statusCode = statusCode;
+        if (statusCode == STATUS_CODE_LATE_AIRLINE) {
+            // Pay out customer claims
+            dataContract.creditInsurees(airline, flight, timestamp);
+        }
+
     }
 
 
@@ -194,7 +199,7 @@ contract FlightSuretyApp {
 
    function getExistingInsuranceContract(address airline,
             string calldata flightNumber, uint256 timestamp) external view
-            returns (uint, uint){
+            returns (uint, uint, bool){
         return dataContract.getExistingInsuranceContract(airline, flightNumber,
                 timestamp);
    }
@@ -300,11 +305,6 @@ contract FlightSuretyApp {
 
             // Handle flight status as appropriate
             processFlightStatus(airline, flight, timestamp, statusCode);
-
-            if (statusCode == STATUS_CODE_LATE_AIRLINE) {
-                // Pay out customer claims
-                dataContract.creditInsurees(airline, flight, timestamp);
-            }
         }
     }
 

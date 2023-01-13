@@ -44,9 +44,10 @@ contract FlightSuretyData {
     mapping(string => address) private airlineNameAddressLookup;
 
 
-    mapping(bytes32 => InsuranceContract[]) private insuranceContracts;
-    mapping(bytes32 => mapping(address => InsuranceContract)) insuranceContractsLookupByFlightAccount;
-    mapping(address => InsuranceContract[]) insuranceContractsLookupByAccount;
+    InsuranceContract[] private insuranceContracts;
+    mapping(bytes32 => mapping(address => uint)) private insuranceContractsLookupByFlightAccount;
+    mapping(address => uint[]) private insuranceContractsLookupByAccount;
+    mapping(bytes32 => uint[]) private insuranceContractsLookupByFlight;
 
     uint private airlineCount;
 
@@ -233,18 +234,18 @@ contract FlightSuretyData {
     // Retrieves price, payout amount for existing flight insurance policy
     function getExistingInsuranceContract(address airline,
             string calldata flightNumber, uint timestamp) external view
-            returns (uint, uint){
+            returns (uint, uint, bool){
         bytes32 flightKey = getFlightKey(airline, flightNumber, timestamp);
-        InsuranceContract memory policy = insuranceContractsLookupByFlightAccount[flightKey][tx.origin];
+        InsuranceContract memory policy = insuranceContracts[insuranceContractsLookupByFlightAccount[flightKey][tx.origin]];
         require(policy.price > 0, "No policy found for account / flight");
-        return (policy.price, policy.payout);
+        return (policy.price, policy.payout, policy.paid);
    }
 
     // Retrieves price, payout amount for existing flight insurance policy
     function getPolicyDetails(address accountAddress, uint index) external view
             returns (address, address, string memory, uint, uint, uint, bool, bool){
 
-        InsuranceContract memory policy = insuranceContractsLookupByAccount[accountAddress][index];
+        InsuranceContract memory policy = insuranceContracts[insuranceContractsLookupByAccount[accountAddress][index]];
         require (policy.account != address(0), "No policy found for this index!");
         return (policy.account, policy.airline, policy.flight, policy.timestamp, policy.price, policy.payout, policy.expired, policy.paid);
    }
@@ -265,11 +266,22 @@ contract FlightSuretyData {
         uint price = msg.value;
         address customer = tx.origin;
         bytes32 flightKey = getFlightKey(airline, flightNumber, timestamp);
-        require(insuranceContractsLookupByFlightAccount[flightKey][customer].account == address(0), "Customer already purchased a contract for this flight!");
+        // Check that there is no existing insurance policy
+        // Criteria: Non-0 indexed policy or 0-indexed policy matches flight/customer
+        require(insuranceContractsLookupByFlightAccount[flightKey][customer] == 0, "Customer already purchased a contract for this flight!");
+        // If there is only one policy in our DB, check that it does not match this account/flight
+        if (insuranceContracts.length == 1) {
+            InsuranceContract memory firstContract = insuranceContracts[0];
+            bytes32 compareFlightKey = getFlightKey(firstContract.airline, firstContract.flight, firstContract.timestamp);
+            require(compareFlightKey != flightKey, "Customer already purchased a contract for this flight!");
+        }
+
         InsuranceContract memory newContract = InsuranceContract(customer, airline, flightNumber, timestamp, price, payout, false, false);
-        insuranceContracts[flightKey].push(newContract);
-        insuranceContractsLookupByFlightAccount[flightKey][customer] = newContract;
-        insuranceContractsLookupByAccount[customer].push(newContract);
+        insuranceContracts.push(newContract);
+        uint newIndex = insuranceContracts.length - 1;
+        insuranceContractsLookupByFlightAccount[flightKey][customer] = newIndex;
+        insuranceContractsLookupByAccount[customer].push(newIndex);
+        insuranceContractsLookupByFlight[flightKey].push(newIndex);
     }
 
     /**
@@ -277,12 +289,17 @@ contract FlightSuretyData {
     */
     function creditInsurees(address airline, string calldata flightNumber, uint timestamp) external originatedFromApp {
         bytes32 flightKey = getFlightKey(airline, flightNumber, timestamp);
-        InsuranceContract[] memory flightContracts = insuranceContracts[flightKey];
-        for (uint i=0; i < flightContracts.length; i++) {
-            InsuranceContract memory policy = insuranceContracts[flightKey][i];
-            address customer = policy.account;
-            uint payout = policy.payout;
-            insuredBalances[customer] = insuredBalances[customer] + payout;
+        uint[] memory indexes = insuranceContractsLookupByFlight[flightKey];
+        for (uint i=0; i < indexes.length; i++) {
+            // Update paid status
+            InsuranceContract memory policy = insuranceContracts[indexes[i]];
+            if (!policy.paid) {
+                uint payout = policy.payout;
+                address customer = policy.account;
+                policy.paid = true;
+                insuranceContracts[indexes[i]] = policy;
+                insuredBalances[customer] = insuredBalances[customer] + payout;
+            }
         }
     }
     
