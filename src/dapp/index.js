@@ -96,7 +96,7 @@ let flightsEventHandlers;
         console.log('Policies will be visible now!');
         // displayFlights(serverApi.getFlights(), {}, contract);
         // let serverApi = new ServerApi('localhost', contract.firstAirlineAddress);
-        displayPolicies(await serverApi.getPolicies(contract.owner));
+        displayPolicies(await serverApi.getPolicies(contract.owner), await serverApi.getBalance(contract.owner));
     });
     
 
@@ -242,7 +242,11 @@ function displayAirlines(airlines) {
 
 
 
-function displayPolicies(policies) {
+function displayPolicies(policies, balance) {
+    console.log("Inside method displayBalance...");
+    console.log(balance);
+    let displayBalance = DOM.elid("display-balance");
+    displayBalance.innerText = balance;
 
     let displayTable = DOM.elid("policies-table-body");
     let numberRows = displayTable.rows.length;

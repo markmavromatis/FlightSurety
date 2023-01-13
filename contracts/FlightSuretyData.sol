@@ -39,7 +39,7 @@ contract FlightSuretyData {
     mapping(address => bool) private registeredAirlines;             // Approved airlines who can call these methods
     mapping(address => VotingStatus) private pendingAirlines;           // Airlines waiting for votes
     mapping(address => uint256) private airlineFunds;
-    mapping(address => uint256) private insuredBalances;
+    mapping(address => uint) private insuredBalances;
     mapping(address => bool) private fundedAirlines;
     mapping(string => address) private airlineNameAddressLookup;
 

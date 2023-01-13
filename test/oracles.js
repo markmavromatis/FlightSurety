@@ -69,13 +69,13 @@ contract('Oracles', async (accounts) => {
     const payout = policy[1];
 
     // Confirm account balance before status update
-    const balanceBefore = parseInt(await config.flightSuretyApp.getInsuredBalance({from: config.owner}));
+    const balanceBefore = parseInt(await config.flightSuretyApp.getInsuredBalance(config.owner));
 
     // Make request for an on-time flight
     await makeOracleRequestAndConfirmStatus(airline, flight, timestamp, 10)
 
     // Confirm account balance is unchanged
-    const balanceAfter = parseInt(await config.flightSuretyApp.getInsuredBalance({from: config.owner}));
+    const balanceAfter = parseInt(await config.flightSuretyApp.getInsuredBalance(config.owner));
     assert.equal(balanceBefore, balanceAfter, "Insured balance should be unchanged for on-time flights");
 
   })
@@ -100,13 +100,13 @@ contract('Oracles', async (accounts) => {
     assert.equal(paidBefore, false, "Policy should be marked as not paid!");
 
     // Confirm account balance before status update
-    const balanceBefore = parseInt(await config.flightSuretyApp.getInsuredBalance({from: config.owner}));
+    const balanceBefore = parseInt(await config.flightSuretyApp.getInsuredBalance(config.owner));
 
     // Make request for an on-time flight
     await makeOracleRequestAndConfirmStatus(airline, flight, timestamp, STATUS_CODE_LATE_AIRLINE)
 
     // Confirm account balance has increased
-    const balanceAfter = parseInt(await config.flightSuretyApp.getInsuredBalance({from: config.owner}));
+    const balanceAfter = parseInt(await config.flightSuretyApp.getInsuredBalance(config.owner));
     assert.equal(balanceBefore + payout, balanceAfter, "Insured balance be updated to reflect payout");
 
     // Check policy fields

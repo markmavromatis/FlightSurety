@@ -97,8 +97,8 @@ contract FlightSuretyApp {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
-    function getInsuredBalance() public view returns (uint) {
-        return dataContract.getInsuredBalance(tx.origin);
+    function getInsuredBalance(address account) public view returns (uint) {
+        return dataContract.getInsuredBalance(account);
     }
 
     function fund() public payable {

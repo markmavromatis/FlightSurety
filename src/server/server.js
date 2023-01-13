@@ -64,6 +64,14 @@ app.get('/api/airlines', (req, res) => {
   })
 })
 
+app.get('/api/balance/:address', async (req, res) => {
+  const address = req.params.address;
+  const balance = await policyService.getBalance(address);
+  res.json({
+    balance
+  })
+})
+
 app.get('/api/policies/:address', async (req, res) => {
   console.log("API call: policies");
   const address = req.params.address;

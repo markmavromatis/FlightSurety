@@ -29,6 +29,14 @@ export default class ServerApi {
         return FlightsData;
     }
 
+    async getBalance(accountAddress) {
+        console.log("Inside method getBalance...");
+        const url = `${this.baseUrl}/api/balance/${accountAddress}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.balance;
+    }
+
     async getPolicyCount(accountAddress) {
         const url = `${this.baseUrl}/api/policies/${accountAddress}`;
         console.log("URL is: " + url);

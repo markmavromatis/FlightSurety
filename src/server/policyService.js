@@ -6,6 +6,12 @@ export default class PolicyService {
         this.flightSuretyApp = flightSuretyApp;          
     };
 
+    async getBalance(accountAddress) {
+        console.log("Inside method getBalance...");
+        const result = await this.flightSuretyApp.methods.getInsuredBalance(
+                accountAddress).call();
+        return result[0];
+   }
     async getPolicyCount(accountAddress) {
         console.log("Retrieving policies...");
         console.log("Address = " + accountAddress);
