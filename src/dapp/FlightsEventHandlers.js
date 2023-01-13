@@ -16,8 +16,12 @@ export default class FlightsEventHandlers {
             await this.contract.getFlightStatus(airlineAddress, flightNumber, departureTime);
         } catch (e) {
             // Flight not found! Register the flight
-            await this.contract.registerFlight2(airlineAddress, flightNumber, departureTime);
-            console.log("Registered flight");
+            try {
+                await this.contract.registerFlight(airlineAddress, flightNumber, departureTime);
+            } catch (e) {
+                console.error(e);
+                return
+            }
         };
         
         try {
@@ -36,9 +40,9 @@ export default class FlightsEventHandlers {
     }
 
     async getStatus(flight) {
-        console.log("Getting flight for: " + flight.flightNumber + " " + flight.departureTime);
+        console.log("Getting flight for: " + flight.address + " " + flight.flightNumber + " " + flight.departureTime);
         try {
-            const result = await this.contract.getFlightStatus("", flight.flightNumber, flight.departureTime);
+            const result = await this.contract.getFlightStatus(flight.address, flight.flightNumber, flight.departureTime);
             console.log("Status is now: " + result);
             if (result != 0) {
                 flight.status = result;

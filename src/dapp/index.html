@@ -86,7 +86,7 @@
                 <thead>
                   <tr>
                     <th scope="col">#</th>
-                    <th scope="col">Flight Number<button id="registerOracles">Register Oracles</button></th>
+                    <th scope="col">Flight Number</th>
                     <th scope="col">Timestamp</th>
                     <th scope="col">Price</th>
                     <th scope="col">Payout</th>
@@ -98,13 +98,10 @@
             </table>
         </div>
         <div class="tab-pane fade" id="oracles" role="tabpanel" aria-labelledby="oracles-tab">
+            <button id="registerOracles">Register Oracles</button>
             <div id="display-wrapper" class="top-20">
             </div>
-            <div class="row top-20">
-                <label class="form">Flight</label>
-                    <input type="text" id="flight-number">
-                    <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
-            </div>
+            <div id="oracles-status"></div>
         </div>
     </div>
     </main>

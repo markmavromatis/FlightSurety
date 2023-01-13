@@ -17,11 +17,12 @@ export default class ServerApi {
         // console.log(this.getAirlines());
     }
 
-    getAirlines() {
-        return [{
-            address: this.firstAirlineAddress,
-            description: "United Airlines"
-        }];
+    async getAirlines() {
+        const url = `${this.baseUrl}/api/airlines`;
+        console.log("URL is: " + url);
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.AirlinesData;
     }
 
     getFlights() {

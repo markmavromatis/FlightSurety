@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import OracleService from './OracleService';
 import PolicyService from './policyService';
+import AirlinesData from '../shared/airlinesData.json';
 
 let config = Config['localhost'];
 var Web3 = require('web3');
@@ -55,6 +56,12 @@ app.get('/api', (req, res) => {
     res.send({
       message: 'An API for use with your Dapp!'
     })
+})
+
+app.get('/api/airlines', (req, res) => {
+  res.json({
+    AirlinesData
+  })
 })
 
 app.get('/api/policies/:address', async (req, res) => {
