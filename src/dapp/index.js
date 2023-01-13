@@ -68,6 +68,7 @@ let flightsEventHandlers;
             await serverApi.registerOracleListener();
             const result = await serverApi.oraclesReady()
             status.oraclesRegistered = result.status;
+            document.getElementById("registerOracles").style.display = "none";
             updateSystemStatus();
         })
 
@@ -146,9 +147,6 @@ let flightsEventHandlers;
 
 
     function displayFlights(flights) {
-        console.log("Entering displayFlights...");
-        console.log("Flight 0 status = " + flights[0].status);
-
         let displayTable = DOM.elid("flights-table-body");
         let numberRows = displayTable.rows.length;
         for (let i = 0; i < numberRows; i++) {
@@ -171,19 +169,9 @@ let flightsEventHandlers;
             if (result.status == "Unknown" && status.oraclesRegistered) {
                 // Add "Check Status" button
                 var checkStatusButton = document.createElement('button');
-                checkStatusButton.textContent = 'Check Status';
+                checkStatusButton.textContent = 'Fetch Status';
                 checkStatusButton.addEventListener("click", async () => {
-                    try {
-                        await contract.registerFlight(result.address, result.flightNumber, result.departureTime, (error, result) => {
-                            console.log("Registered flight");
-                        });
-                    } catch (e) {
-                        // Do nothing
-                        console.error("Error: " + e);
-                    }
-                    contract.fetchFlightStatus(result.address, result.flightNumber, result.departureTime, (error, result) => {
-                        console.log('Oracles', 'Trigger oracles', [ { label: 'Fetch Flight Status', error: error, value: result.flight + ' ' + result.timestamp} ]);
-                    });
+                    await flightsEventHandlers.fetchStatus(result);
                     result.status = "Pending";
                     displayFlights(flights);
                 });
@@ -200,9 +188,8 @@ let flightsEventHandlers;
             }
             let cell7 = newRow.insertCell(6);
             if (flights[i].hasPolicy) {
-                // TODO: Show a policy here
                 cell7.textContent = "*";
-            } else {
+            } else if (flights[i].status == "Unknown") {
                 var buyPolicyButton = document.createElement('button');
                 buyPolicyButton.textContent = 'Buy';
                 buyPolicyButton.addEventListener("click", async () => {

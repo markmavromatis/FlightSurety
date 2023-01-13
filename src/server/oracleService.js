@@ -70,7 +70,6 @@ export default class OracleService {
         const requestIndex = event.returnValues[0];
         this.oracles.map(async (oracle, index) => {
           if (oracle.indexLookup[requestIndex] == true) {
-
             const requestAirline = event.returnValues[1];
             const requestFlight = event.returnValues[2];
             const requestTimestamp = event.returnValues[3];
@@ -80,6 +79,8 @@ export default class OracleService {
             .send({ from: oracle.address, gas: 100000}, (error, result) => {
               if (error) {
                 throw new Error("Failed to call submitOracleResponse. Reason: " + error);
+              } else {
+                console.log(`Updated status ${statusCode} for flight: ${requestFlight}`);
               }
             });
           }

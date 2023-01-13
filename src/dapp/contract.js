@@ -115,7 +115,9 @@ export default class Contract {
             .registerFlight(payload.airline, payload.flight, payload.timestamp)
             .send({ from: self.owner, gas: 1000000}, (error, result) => {
                 console.log("RegisterFlight result: " + result);
-                console.error("RegisterFlight error: " + error);
+                if (error) {
+                    console.error("RegisterFlight error: " + error);
+                }
             });
     }
 

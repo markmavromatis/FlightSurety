@@ -66,4 +66,11 @@ export default class FlightsEventHandlers {
             console.error("Error calling getPolicies(): e");
         }
     }
+
+    async fetchStatus(flight) {
+        await this.contract.registerFlight(flight.address, flight.flightNumber, flight.departureTime);
+        this.contract.fetchFlightStatus(flight.address, flight.flightNumber, flight.departureTime, (error, result) => {
+            console.log('Oracles', 'Trigger oracles', [ { label: 'Fetch Flight Status', error: error, value: result.flight + ' ' + result.timestamp} ]);
+        });
+    }
 }
