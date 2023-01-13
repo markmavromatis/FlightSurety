@@ -2,14 +2,11 @@ import Config from './config.json';
 import FlightsData from '../shared/flightsData.json';
 
 export default class ServerApi {
-    constructor(host, port, firstAirlineAddress) {
+    constructor(host, port) {
         console.log("Host is: " + host);
         this.host = host;
         this.port = port;
         this.baseUrl = `http://${host}:${port}`;
-        console.log("First airline address is: " + firstAirlineAddress);
-        // let serverPort = Config[network];
-        this.firstAirlineAddress = firstAirlineAddress;
         this.initialize();
     }
 

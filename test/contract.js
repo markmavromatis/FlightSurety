@@ -75,7 +75,7 @@ contract('Contract Tests', async (accounts) => {
         const price = 2;
         console.log("Test addresses: " + config.testAddresses[0]);
         await config.flightSuretyApp.registerFlight.sendTransaction(firstAirline, flightNumber, flightTime, {from: config.owner});
-        await config.flightSuretyApp.buy.sendTransaction(firstAirline, flightNumber, flightTime, {from: config.owner, value: price, gas: 1000000});
+        await config.flightSuretyApp.buy.sendTransaction(firstAirline, flightNumber, flightTime, {from: config.owner, value: price, gas: 500000});
         const results = await config.flightSuretyApp.getExistingInsuranceContract.call(firstAirline, flightNumber, flightTime, {from: config.owner});
         const payout = results[1];
         const paid = results[2];

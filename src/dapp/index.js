@@ -62,7 +62,7 @@ let contract;
     
 
         DOM.elid('registerOracles').addEventListener('click', async () => {
-            let serverApi = new ServerApi('localhost', 3000, contract.firstAirlineAddress);
+            let serverApi = new ServerApi('localhost', 3000);
             const oraclesCount = await serverApi.registerOracles();
             console.log("Registered " + oraclesCount + " oracles!");
             console.log("Registering Oracle event listener...");
@@ -73,7 +73,7 @@ let contract;
             updateSystemStatus();
         })
 
-        serverApi = new ServerApi('localhost', 3000, contract.firstAirlineAddress);
+        serverApi = new ServerApi('localhost', 3000);
         serverApi.getAirlines().then((airlines) => {
             displayAirlines(airlines)
         })
@@ -83,7 +83,7 @@ let contract;
 
     $('button[data-bs-target="#airlines"]').on('shown.bs.tab', function(e){
         console.log('Airlines will be visible now!');
-        let serverApi = new ServerApi('localhost', 3000, contract.firstAirlineAddress);
+        let serverApi = new ServerApi('localhost', 3000);
         serverApi.getAirlines().then((airlines) => {displayAirlines(airlines)});
     });
 
@@ -95,9 +95,7 @@ let contract;
 
     $('button[data-bs-target="#policies"]').on('shown.bs.tab', async function(e){
         console.log('Policies will be visible now!');
-        // displayFlights(serverApi.getFlights(), {}, contract);
-        // let serverApi = new ServerApi('localhost', contract.firstAirlineAddress);
-        displayPolicies(await serverApi.getPolicies(contract.owner), await serverApi.getBalance(contract.owner));
+        displayPolicies();
     });
     
 
@@ -116,7 +114,7 @@ let contract;
                 status.inOperation = result;
 
                 // Now check that server is running...
-                let serverApi = new ServerApi('localhost', 3000, contract.firstAirlineAddress);
+                let serverApi = new ServerApi('localhost', 3000);
                 try {
                     console.log("Connecting...");
                     serverApi.pingServer()
@@ -235,16 +233,21 @@ function displayAirlines(airlines) {
         let cell1 = newRow.insertCell(0);
         cell1.innerHTML = 1;
         let cell2 = newRow.insertCell(1);
-        cell2.innerHTML = result.address;
+        cell2.innerHTML = result.address.substring(0,10) + "...";
         let cell3 = newRow.insertCell(2);
         cell3.innerHTML = result.description;
     })
 }
 
+DOM.elid('pay').addEventListener('click', async () => {
+    await contract.pay();
+    displayPolicies();
+})
 
-
-function displayPolicies(policies, balance) {
+async function displayPolicies() {
     console.log("Inside method displayBalance...");
+    const policies = await serverApi.getPolicies(contract.owner);
+    const balance = await serverApi.getBalance(contract.owner);
 
     let displaySuretyBalance = DOM.elid("display-surety-balance");
     let displayEthereumBalance = DOM.elid("display-ethereum-balance");
@@ -252,6 +255,7 @@ function displayPolicies(policies, balance) {
     .then((tempBalance) => {displayEthereumBalance.innerText = Number(tempBalance).toLocaleString("en-us")});
 
     document.getElementById("pay").style.display = balance > 0 ? "" : "none";
+
 
     displaySuretyBalance.innerText = balance;
 
@@ -277,6 +281,3 @@ function displayPolicies(policies, balance) {
     })
 }
 
-DOM.elid('pay').addEventListener('click', async () => {
-    contract.pay();
-})

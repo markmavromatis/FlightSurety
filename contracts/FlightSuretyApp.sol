@@ -197,6 +197,10 @@ contract FlightSuretyApp {
         dataContract.buy.value(msg.value)(airline, flightNumber, timestamp, payout);
     }
 
+    function pay() external {
+        dataContract.pay();
+    }
+
    function getExistingInsuranceContract(address airline,
             string calldata flightNumber, uint256 timestamp) external view
             returns (uint, uint, bool){

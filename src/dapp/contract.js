@@ -157,10 +157,10 @@ export default class Contract {
         return self.web3.eth.getBalance(self.owner);
     }
 
-    // async pay() {
-    //     let self = this;
-    //     return self.flightSuretyData.methods
-    //         .pay()
-    //         .call({ from: self.owner}, (error, result) => {});
-    // }
+    async pay() {
+        let self = this;
+        return self.flightSuretyApp.methods
+            .pay()
+            .send({ from: self.owner}, (error, result) => {});
+    }
 }

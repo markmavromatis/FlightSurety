@@ -1,5 +1,7 @@
 const REGISTRATION_FEE = 1; // 1 wei
 const ORACLE_COUNT = 20;
+const GAS_PRICE = 100000000000;
+const GAS_AMOUNT = 4800000;
 
 export default class OracleService {
 
@@ -33,8 +35,7 @@ export default class OracleService {
             const oracle = this.oracles[i];
             await this.flightSuretyApp.methods.registerOracle()
             .send({ from: oracle.address, value: REGISTRATION_FEE,
-                "gas": 4800000,
-                "gasPrice": 100000000000
+                "gasPrice": GAS_PRICE, "gas": GAS_AMOUNT
             }, (error, result) => {
                 if (error) {
                 throw new Error("Failed to register oracle. Reason: " + error);
@@ -77,7 +78,7 @@ export default class OracleService {
 
             await this.flightSuretyApp.methods.submitOracleResponse
             (requestIndexAsNumber, requestAirline,requestFlight, requestTimestamp, statusCode)
-            .send({ from: oracle.address, gas: 1000000}, (error, result) => {
+            .send({ from: oracle.address, gas: GAS_AMOUNT}, (error, result) => {
               if (error) {
                 throw new Error("Failed to call submitOracleResponse. Reason: " + error);
               } else {

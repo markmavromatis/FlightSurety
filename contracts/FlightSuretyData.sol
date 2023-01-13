@@ -308,12 +308,11 @@ contract FlightSuretyData {
      *  @dev Transfers eligible payout funds to insuree
      *
     */
-    function pay
-                            (
-                            )
-                            external
-                            pure
-    {
+    function pay() external originatedFromApp {
+        address payable account = tx.origin;
+        uint amountToTransfer = insuredBalances[account];
+        insuredBalances[account] = 0;
+        account.transfer(amountToTransfer);
     }
 
    /**
