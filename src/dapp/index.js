@@ -6,6 +6,8 @@ import ServerApi from './serverApi';
 import Config from './config.json';
 
 const APPLICATION_TABS = ["airlines-tab", "flights-tab", "policies-tab"]
+const SERVER_PORT = 3000;
+
 let status = {
     online: null,
     blockchainConnectivity: false,
@@ -14,7 +16,7 @@ let status = {
     oraclesRegistered: false,
     serverUp: false
 };
-let serverApi = null;
+let serverApi = new ServerApi('localhost', SERVER_PORT);
 
 function updateSystemStatus() {
     const systemStatusSpan = DOM.elid("systemStatus");
@@ -43,14 +45,11 @@ let contract;
 
 (async() => {
 
-
     let network = 'localhost';
-    let config = Config[network];
-
-    contract = new Contract('localhost', () => {
+    contract = new Contract(network, () => {
 
         DOM.elid('registerOracles').addEventListener('click', async () => {
-            let serverApi = new ServerApi('localhost', 3000);
+
             const oraclesCount = await serverApi.registerOracles();
             console.log("Registered " + oraclesCount + " oracles!");
             console.log("Registering Oracle event listener...");
@@ -62,7 +61,6 @@ let contract;
             displaySystemStatus();
         })
 
-        serverApi = new ServerApi('localhost', 3000);
     });
 
     DOM.elid('disableSystem').addEventListener('click', async() => {
@@ -83,7 +81,7 @@ let contract;
         displaySystemStatus();
     }
 
-    flightsEventHandlers = new FlightsEventHandlers(contract, new ServerApi('localhost', 3000, contract.firstAirlineAddress));
+    flightsEventHandlers = new FlightsEventHandlers(contract, serverApi);
 
     $('button[data-bs-target="#airlines"]').on('shown.bs.tab', function(e){
         console.log('Airlines will be visible now!');
