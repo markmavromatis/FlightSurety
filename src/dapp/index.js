@@ -351,7 +351,10 @@ async function displayPolicies() {
         let cell2 = newRow.insertCell(1);
         cell2.innerHTML = result.flight;
         let cell3 = newRow.insertCell(2);
-        cell3.innerHTML = Date(result.timestamp);
+        const departureDate = new Date(result.timestamp * 1000);
+        const departureDateString = (departureDate.getYear() + 1900) + "/" + (departureDate.getMonth() + 1) + "/" + departureDate.getDate();
+        const departureTimeString = departureDate.getHours() + ":" + departureDate.getMinutes();
+        cell3.innerHTML = departureDateString + " " + departureTimeString;
         let cell4 = newRow.insertCell(3);
         cell4.innerHTML = Number(result.price).toLocaleString();
         let cell5 = newRow.insertCell(4);
