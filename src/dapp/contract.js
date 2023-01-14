@@ -3,6 +3,8 @@ import FlightSuretyData from '../../build/contracts/FlightSuretyData.json';
 import Config from './config.json';
 import Web3 from 'web3';
 
+const DEFAULT_GAS = 1000000;
+
 export default class Contract {
     constructor(network, callback) {
         let config = Config[network];
@@ -38,19 +40,13 @@ export default class Contract {
         });
     }
 
-    async buyPolicy(airlineAddress, flight, timestamp) {
+    async buyPolicy(airlineAddress, flight, timestamp, price) {
         let self = this;
-        console.log("Inside method buy...");
         const sender = self.owner;
-        console.log("Sender = " + sender);
         const timestampSolidity = Math.floor(new Date(timestamp).getTime() / 1000);
-        console.log("Address = " + airlineAddress);
-        console.log("Flight = " + flight);
-        console.log("Timestamp = " + timestampSolidity);
-        console.log("Sender = " + sender);
         return self.flightSuretyApp.methods
             .buy(airlineAddress, flight, timestampSolidity)
-            .send({ from: sender, gas: 1000000, value: "1"})
+            .send({ from: sender, gas: DEFAULT_GAS, value: price})
     }
 
     async getPolicy(airlineAddress, flight, timestamp) {
@@ -60,9 +56,7 @@ export default class Contract {
         const timestampSolidity = Math.floor(new Date(timestamp).getTime() / 1000);
         return self.flightSuretyApp.methods
             .getExistingInsuranceContract(airlineAddress, flight, timestampSolidity)
-            .call({ from: sender}, (error, result) => {
-                // return result;
-            });
+            .call({ from: sender});
     }
 
     async isOperational() {
@@ -112,7 +106,7 @@ export default class Contract {
         }
         return self.flightSuretyApp.methods
             .registerFlight(payload.airline, payload.flight, payload.timestamp)
-            .send({ from: self.owner, gas: 1000000}, (error, result) => {
+            .send({ from: self.owner, gas: DEFAULT_GAS}, (error, result) => {
                 console.log("RegisterFlight result: " + result);
                 if (error) {
                     console.error("RegisterFlight error: " + error);

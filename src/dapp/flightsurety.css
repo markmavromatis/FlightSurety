@@ -44,3 +44,7 @@ input {
 span.alert {
     color: red
 }
+
+.hidden {
+    display: none;
+  }

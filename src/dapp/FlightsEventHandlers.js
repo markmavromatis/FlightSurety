@@ -5,38 +5,29 @@ export default class FlightsEventHandlers {
         this.serverApi = serverApi;
     }
 
-    async buyPolicy(flights, i) {
+    async buyPolicy(flights, i, price) {
+        const airline = flights[i].address;
+        const flight = flights[i].flightNumber;
+        const timestamp = flights[i].departureTime;
 
-        const airlineAddress = flights[i].address;
-        const flightNumber = flights[i].flightNumber;
-        const departureTime = flights[i].departureTime;
 
         // Check that flight exists
         try {
-            await this.contract.getFlightStatus(airlineAddress, flightNumber, departureTime);
+            await this.contract.getFlightStatus(airline, flight, timestamp);
         } catch (e) {
             // Flight not found! Register the flight
             try {
-                await this.contract.registerFlight(airlineAddress, flightNumber, departureTime);
+                await this.contract.registerFlight(airline, flight, timestamp);
             } catch (e) {
                 console.error(e);
                 return
             }
         };
         
-        try {
-            const result = await this.contract.buyPolicy(airlineAddress, flightNumber, departureTime);
-            console.log("Buy policy result = " + result);
-        } catch (e) {
-            console.error("Failed in buy call " + e);
-            console.error(JSON.stringify(e));
-            return false;
-        }
+        await this.contract.buyPolicy(airline, flight, timestamp, price);
 
         // Update local data model
-        flights[i].hasPolicy = true;
-
-        return true;
+        flights[i].hasPolicy = true
     }
 
     async getStatus(flight) {

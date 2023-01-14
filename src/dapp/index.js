@@ -3,7 +3,6 @@ import Contract from './contract';
 import './flightsurety.css';
 import FlightsEventHandlers from './FlightsEventHandlers';
 import ServerApi from './serverApi';
-import Web3 from 'web3';
 import Config from './config.json';
 
 const APPLICATION_TABS = ["airlines-tab", "flights-tab", "policies-tab"]
@@ -47,7 +46,6 @@ let contract;
 
     let network = 'localhost';
     let config = Config[network];
-    const web3 = new Web3(new Web3.providers.HttpProvider(config.url));
 
     contract = new Contract('localhost', () => {
 
@@ -138,64 +136,25 @@ let contract;
     })
 
 
-    function displayFlights(flights) {
-        let displayTable = DOM.elid("flights-table-body");
-        let numberRows = displayTable.rows.length;
-        for (let i = 0; i < numberRows; i++) {
-            displayTable.deleteRow(0);
-        }
-        flights.map(async (result, i) => {
-            let newRow = displayTable.insertRow(-1);
-            let cell1 = newRow.insertCell(0);
-            cell1.innerHTML = i + 1;
-            let cell2 = newRow.insertCell(1);
-            cell2.innerHTML = result.flightNumber;
-            let cell3 = newRow.insertCell(2);
-            cell3.innerHTML = result.origin;
-            let cell4 = newRow.insertCell(3);
-            cell4.innerHTML = result.destination;
-            let cell5 = newRow.insertCell(4);
-            cell5.innerHTML = result.departureTime;
-            let cell6 = newRow.insertCell(5);
-            cell6.innerHTML = result.status;
-            if (result.status == "Unknown" && status.oraclesRegistered) {
-                // Add "Check Status" button
-                var checkStatusButton = document.createElement('button');
-                checkStatusButton.textContent = 'Fetch Status';
-                checkStatusButton.addEventListener("click", async () => {
-                    await flightsEventHandlers.fetchStatus(result);
-                    result.status = "Pending";
-                    displayFlights(flights);
-                });
-                cell6.appendChild(checkStatusButton);
-            } else if (result.status == "Pending") {
-                // Add "Get Status" button
-                var getStatusButton = document.createElement('button');
-                getStatusButton.textContent = 'Get Status';
-                getStatusButton.addEventListener("click", async () => {
-                    await flightsEventHandlers.getStatus(result);
-                    displayFlights(flights);
-                });
-                cell6.appendChild(getStatusButton);
-            }
-            let cell7 = newRow.insertCell(6);
-            if (flights[i].hasPolicy) {
-                cell7.textContent = "*";
-            } else if (flights[i].status == "Unknown") {
-                var buyPolicyButton = document.createElement('button');
-                buyPolicyButton.textContent = 'Buy';
-                buyPolicyButton.addEventListener("click", async () => {
-                    await flightsEventHandlers.buyPolicy(flights, i);
-                    displayFlights(flights);
-                })
-                cell7.appendChild(buyPolicyButton);
-            }
-        })
-    }
+
 
 
 
 })();
+
+var exampleModal = document.getElementById('exampleModal')
+exampleModal.addEventListener('show.bs.modal', function (event) {
+    DOM.elid('buy-warning').classList.add('hidden');
+    DOM.elid('buy-price').value = "";
+    var button = event.relatedTarget // Button that triggered the modal
+
+    var modal = $(this)
+    modal.find('.modal-title').text('Buy Policy');
+    modal.find('#buy-flight-number').val(button.getAttribute('data-bs-flight-number'));
+    modal.find('#buy-departure-time').val(button.getAttribute('data-bs-departure-time'));
+    modal.find('#buy-airline-address').val(button.getAttribute('data-bs-airline-address'));
+    modal.find('#buy-airline-index').val(button.getAttribute('data-bs-index'));
+  })
 
 displaySystemStatus();
 
@@ -257,6 +216,101 @@ function displayAirlines(airlines) {
         cell3.innerHTML = result.description;
     })
 }
+
+function displayFlights(flights) {
+    let displayTable = DOM.elid("flights-table-body");
+    let numberRows = displayTable.rows.length;
+    for (let i = 0; i < numberRows; i++) {
+        displayTable.deleteRow(0);
+    }
+    flights.map(async (result, i) => {
+        let newRow = displayTable.insertRow(-1);
+        let cell1 = newRow.insertCell(0);
+        cell1.innerHTML = i + 1;
+        let cell2 = newRow.insertCell(1);
+        cell2.innerHTML = result.flightNumber;
+        let cell3 = newRow.insertCell(2);
+        cell3.innerHTML = result.origin;
+        let cell4 = newRow.insertCell(3);
+        cell4.innerHTML = result.destination;
+        let cell5 = newRow.insertCell(4);
+        cell5.innerHTML = result.departureTime;
+        let cell6 = newRow.insertCell(5);
+        cell6.innerHTML = result.status;
+        if (result.status == "Unknown" && status.oraclesRegistered) {
+            // Add "Check Status" button
+            var checkStatusButton = document.createElement('button');
+            checkStatusButton.textContent = 'Fetch Status';
+            checkStatusButton.addEventListener("click", async () => {
+                await flightsEventHandlers.fetchStatus(result);
+                result.status = "Pending";
+                displayFlights(flights);
+            });
+            cell6.appendChild(checkStatusButton);
+        } else if (result.status == "Pending") {
+            // Add "Get Status" button
+            var getStatusButton = document.createElement('button');
+            getStatusButton.textContent = 'Get Status';
+            getStatusButton.addEventListener("click", async () => {
+                await flightsEventHandlers.getStatus(result);
+                displayFlights(flights);
+            });
+            cell6.appendChild(getStatusButton);
+        }
+        let cell7 = newRow.insertCell(6);
+        if (flights[i].hasPolicy) {
+            cell7.textContent = "*";
+        } else if (flights[i].status == "Unknown") {
+            var buyPolicyButton = document.createElement('button');
+            buyPolicyButton.classList.add("btn");
+            buyPolicyButton.classList.add("btn-primary");
+            buyPolicyButton.setAttribute("type", "button");
+            buyPolicyButton.setAttribute("data-bs-toggle", "modal");
+            buyPolicyButton.setAttribute("data-bs-target", "#exampleModal");
+            buyPolicyButton.setAttribute("data-bs-airline-address", result.address);
+            buyPolicyButton.setAttribute("data-bs-index", i);
+            buyPolicyButton.setAttribute("data-bs-flight-number", result.flightNumber);
+            buyPolicyButton.setAttribute("data-bs-departure-time", result.departureTime);
+            buyPolicyButton.textContent = 'Buy';
+            cell7.appendChild(buyPolicyButton);
+        }
+    })
+}
+
+
+DOM.elid('buy-confirm').addEventListener('click', async() => {
+    const index = DOM.elid('buy-airline-index').value;
+    const price = DOM.elid('buy-price').value;
+    // Validate price < 1 ether
+    const warningMessageDiv = DOM.elid('buy-warning');
+    warningMessageDiv.classList.add('hidden');
+    let warning = "";
+    const priceAsNumber = Number(price);
+    if (price == "") {
+        warning = "Please enter a price!";
+    } else {
+        if (isNaN(priceAsNumber) || priceAsNumber != parseInt(priceAsNumber)) {
+            warning = "Please enter a valid integer!";
+        } else if (priceAsNumber >= contract.web3.utils.toWei('1', 'ether')) {
+            warning  = "Please enter a value less than 1 ether!";
+        }
+    }
+    if (!warning) {
+        try {
+            const flights = serverApi.getFlights();
+            await flightsEventHandlers.buyPolicy(flights, index, priceAsNumber);
+            displayFlights(flights);
+            $("#exampleModal").modal('hide');
+        } catch(e) {
+            warning = "Failed to buy policy. Reason: " + e;
+        }
+    }
+    if (warning) {
+        warningMessageDiv.textContent = warning;
+        DOM.elid('buy-warning').classList.remove('hidden');
+    }
+})
+                // })
 
 DOM.elid('pay').addEventListener('click', async () => {
     await contract.pay();
