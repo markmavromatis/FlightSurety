@@ -1,20 +1,25 @@
 import FlightSuretyApp from '../../build/contracts/FlightSuretyApp.json';
+import FlightSuretyData from '../../build/contracts/FlightSuretyData.json';
 import Config from './config.json';
 import express from 'express';
 import cors from 'cors';
 import OracleService from './OracleService';
 import PolicyService from './policyService';
 import AirlinesData from '../shared/airlinesData.json';
+import SystemService from './systemService';
 
 let config = Config['localhost'];
 var Web3 = require('web3');
 
 let oracleService = null;
 let policyService = null;
+let systemService = null;
+
 const web3 = new Web3("ws://127.0.0.1:8555");
 
 let oracles = [];
 let flightSuretyApp = null;
+let flightSuretyData = null;
 
 web3.eth.net.isListening()
 .then(() => {
@@ -26,12 +31,16 @@ web3.eth.net.isListening()
 
       console.log("Setting up FlightSuretyApp...");
       flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
+      flightSuretyData = new web3.eth.Contract(FlightSuretyData.abi, config.dataAddress);
 
       console.log("Initializing Oracles service...");
       oracleService = new OracleService(accounts, flightSuretyApp);
 
       console.log("Initializing Policies service...");
       policyService = new PolicyService(flightSuretyApp);
+
+      console.log("Initializing System service...");
+      systemService = new SystemService(accounts[0], flightSuretyData);
     })
 
   })
@@ -129,6 +138,30 @@ app.post('/api/registerOracleListener', async (req, res) => {
     console.log("Result is: " + result);
     const response = {message: "Oracle listener registered!"};
     console.log("Returning response: " + JSON.stringify(response));
+    res.json(response);
+  } catch (e) {
+    console.error(e);
+  }
+})
+
+app.get('/api/isOperational', async (req, res) => {
+  console.log("API call: isOperational");
+
+  try {
+    const response = await systemService.isOperational();
+    res.json(response);
+  } catch (e) {
+    console.error(e);
+  }
+})
+
+app.post('/api/setOperatingStatus/:mode', async (req, res) => {
+  console.log("API call: setOperatingStatus");
+  const mode = req.params.mode;
+  const modeAsBoolean = mode === 'true';
+
+  try {
+    const response = await systemService.setOperatingStatus(modeAsBoolean);
     res.json(response);
   } catch (e) {
     console.error(e);

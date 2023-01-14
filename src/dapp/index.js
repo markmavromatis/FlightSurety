@@ -6,11 +6,12 @@ import ServerApi from './serverApi';
 import Web3 from 'web3';
 import Config from './config.json';
 
+const APPLICATION_TABS = ["airlines-tab", "flights-tab", "policies-tab"]
 let status = {
-    online: false,
+    online: null,
     blockchainConnectivity: false,
     contractsAvailable: false,
-    inOperation: false,
+    inOperation: null,
     oraclesRegistered: false,
     serverUp: false
 };
@@ -24,10 +25,10 @@ function updateSystemStatus() {
         description = "Web3 interface is down. Check blockchain connectivity!"
     } else if (!status.contractsAvailable) {
         description = "Contracts not available in blockchain!";
-    } else if (!status.inOperation) {
-        description = "Surety smart contracts are not operational!";
     } else if (!status.serverUp) {
         description = "Server is down!";
+    } else if (!status.inOperation) {
+        description = "FlightSurety is not operational!";
     } else if (!status.oraclesRegistered) {
         description = "Oracles are not yet registered!";
     } else {
@@ -44,22 +45,11 @@ let contract;
 (async() => {
 
 
-    let result = null;
-    // Set user account initially
     let network = 'localhost';
     let config = Config[network];
-    // this.appAddress = config.appAddress;
     const web3 = new Web3(new Web3.providers.HttpProvider(config.url));
-    // console.log("Results are: " + JSON.stringify(results))
 
     contract = new Contract('localhost', () => {
-
-        // Read transaction
-        contract.isOperational((error, result) => {
-            console.log(error,result);
-            display('Operational Status', 'Check if contract is operational', [ { label: 'Operational Status', error: error, value: result} ]);
-        });
-    
 
         DOM.elid('registerOracles').addEventListener('click', async () => {
             let serverApi = new ServerApi('localhost', 3000);
@@ -71,25 +61,39 @@ let contract;
             status.oraclesRegistered = result.status;
             document.getElementById("registerOracles").style.display = "none";
             updateSystemStatus();
+            displaySystemStatus();
         })
 
         serverApi = new ServerApi('localhost', 3000);
-        serverApi.getAirlines().then((airlines) => {
-            displayAirlines(airlines)
-        })
     });
+
+    DOM.elid('disableSystem').addEventListener('click', async() => {
+        console.log("Disabling system...");
+        toggleSystemStatus(false);
+    })
+
+    DOM.elid('enableSystem').addEventListener('click', async() => {
+        console.log("Enabling system...");
+        toggleSystemStatus(true);
+    })
+
+    async function toggleSystemStatus(mode) {
+        await serverApi.setOperatingStatus(mode);
+        const result = await serverApi.isOperational();
+        status.inOperation = result;
+        updateSystemStatus();
+        displaySystemStatus();
+    }
 
     flightsEventHandlers = new FlightsEventHandlers(contract, new ServerApi('localhost', 3000, contract.firstAirlineAddress));
 
     $('button[data-bs-target="#airlines"]').on('shown.bs.tab', function(e){
         console.log('Airlines will be visible now!');
-        let serverApi = new ServerApi('localhost', 3000);
         serverApi.getAirlines().then((airlines) => {displayAirlines(airlines)});
     });
 
     $('button[data-bs-target="#flights"]').on('shown.bs.tab', function(e){
         console.log('Flights will be visible now!');
-        let serverApi = new ServerApi('localhost', contract.firstAirlineAddress);
         displayFlights(serverApi.getFlights(), {}, contract);
     });
 
@@ -106,42 +110,31 @@ let contract;
         status.blockchainConnectivity = true;
 
         // Check if contracts loaded
-        contract.isOperational(async (error, result) => {
-            if (error){
-                status.contractsAvailable = false;
-            } else {
-                status.contractsAvailable = true;
-                status.inOperation = result;
-
-                // Now check that server is running...
-                let serverApi = new ServerApi('localhost', 3000);
-                try {
-                    console.log("Connecting...");
-                    serverApi.pingServer()
-                    .then((err, response) => {
-                        console.log("Error: " + JSON.stringify(err));
-                        console.log("Response: " + JSON.stringify(response));
-                        status.serverUp = true;
-                        updateSystemStatus();
-                    })
-                    .catch((e) => {
-                        console.log("**** ERROR ping");
-                        status.serverUp = false;
-                        updateSystemStatus();
-                    })
-                } catch (e) {
-                    status.serverUp = false;
-                }
-            };
-
-            updateSystemStatus();
-        });
+        try {
+            const result = await contract.isOperational();
+            status.contractsAvailable = true;
+            status.inOperation = result;
+        } catch (e) {
+            status.contractsAvailable = false;
+        }
+        // Now check that server is running...
+        let serverApi = new ServerApi('localhost', 3000);
+        status.serverUp = false;
+        try {
+            await serverApi.pingServer()
+            status.serverUp = true;
+        } catch (e) {
+            console.error("Server down: " + e);
+        }
+        updateSystemStatus();
+        displaySystemStatus();
 
     })
     .catch(() => {
         // Blockchain offline
         // If web3 isn't connecting, status updated here
         updateSystemStatus();
+        displaySystemStatus();
     })
 
 
@@ -204,21 +197,47 @@ let contract;
 
 })();
 
+displaySystemStatus();
 
-
-function display(title, description, results) {
+async function displaySystemStatus() {
     let displayDiv = DOM.elid("display-wrapper");
+    displayDiv.innerHTML = "";
     let section = DOM.section();
-    section.appendChild(DOM.h2(title));
-    section.appendChild(DOM.h5(description));
-    results.map((result) => {
-        let row = section.appendChild(DOM.div({className:'row'}));
-        row.appendChild(DOM.div({className: 'col-sm-4 field'}, result.label));
-        row.appendChild(DOM.div({className: 'col-sm-8 field-value'}, result.error ? String(result.error) : String(result.value)));
-        section.appendChild(row);
-    })
+
+    const TITLE = "System Status";
+    const DESCRIPTION = "Check if contract is operational";
+    section.appendChild(DOM.h2(TITLE));
+    section.appendChild(DOM.h5(DESCRIPTION));
+    let result = null;
+    let error = null;
+
+    addSystemStatusRow(section, 'Operational Status', status.inOperation ? "ONLINE" : "OFFLINE");
+    addSystemStatusRow(section, 'Oracles Status', status.oraclesRegistered ? "ONLINE" : "OFFLINE");
     displayDiv.append(section);
 
+    // Disable tabs if system is offline
+
+    if (status.inOperation) {
+        APPLICATION_TABS.forEach((tabName) => {
+            DOM.elid(tabName).classList.remove('disabled')
+        });
+        DOM.elid('disableSystem').style.display = "";
+        DOM.elid('enableSystem').style.display = "none";
+    } else {
+        APPLICATION_TABS.forEach((tabName) => {
+            DOM.elid(tabName).classList.add('disabled');
+        })
+        DOM.elid('disableSystem').style.display = "none";
+        DOM.elid('enableSystem').style.display = "";
+    }
+}
+
+function addSystemStatusRow(section, col1, col2) {
+    let row = section.appendChild(DOM.div({className:'row'}));
+    row.appendChild(DOM.div({className: 'col-sm-4 field'}, col1));
+    row.appendChild(DOM.div({className: 'col-sm-8 field-value'}, col2));
+    console.log("Appending row: " + col1);
+    section.appendChild(row);
 }
 
 function displayAirlines(airlines) {

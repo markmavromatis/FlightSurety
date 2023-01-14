@@ -65,18 +65,28 @@ export default class ServerApi {
     }
 
     async registerOracleListener() {
-        console.log("Inside method registerOracleListener...");
-        console.log("Base URL is: " + this.baseUrl)
         const url = `${this.baseUrl}/api/registerOracleListener`;
         const res = await fetch(url, { method: "POST"})
         const data = await res.json()
         return data.count;
     }
     async oraclesReady() {
-        console.log("Inside method oraclesReady...");
-        console.log("Base URL is: " + this.baseUrl)
         const url = `${this.baseUrl}/api/oraclesReady`;
         const res = await fetch(url, { method: "GET"})
+        const data = await res.json()
+        return data;
+    }
+
+    async isOperational() {
+        const url = `${this.baseUrl}/api/isOperational`;
+        const res = await fetch(url, { method: "GET"})
+        const data = await res.json()
+        return data.status;
+    }
+
+    async setOperatingStatus(mode) {
+        const url = `${this.baseUrl}/api/setOperatingStatus/${mode}`;
+        const res = await fetch(url, { method: "POST"})
         const data = await res.json()
         return data;
     }

@@ -141,7 +141,7 @@ contract FlightSuretyData {
      * Authorize an airline. This method is restricted to the contract owner.
      */
     function authorizeCaller(address callerAddress, string calldata airlineName) external
-            requireContractOwner {
+            requireContractOwner requireIsOperational {
         require(registeredAirlines[callerAddress] == false, "Caller address is already registered!");
         airlineDetails[callerAddress].airlineAddress = callerAddress;
         airlineDetails[callerAddress].airlineName = airlineName;
@@ -154,17 +154,11 @@ contract FlightSuretyData {
     *
     * When operational mode is disabled, all write transactions except for this one will fail
     */    
-    function setOperatingStatus
-                            (
-                                bool mode
-                            ) 
-                            external
-                            requireContractOwner 
-    {
+    function setOperatingStatus(bool mode) external requireContractOwner {
         operational = mode;
     }
 
-    function setAppContractAddress(address accountContract) external
+    function setAppContractAddress(address accountContract) requireIsOperational external
             requireContractOwner {
         appContract = accountContract;
     }
@@ -193,7 +187,7 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */   
-    function registerAirline(address newAirline, string calldata airlineName) external requireFunded originatedFromApp {
+    function registerAirline(address newAirline, string calldata airlineName) external requireFunded requireIsOperational originatedFromApp {
 
         require(registeredAirlines[newAirline] == false, "Caller is already registered!");
 
@@ -260,7 +254,7 @@ contract FlightSuretyData {
     * @dev Buy insurance for a flight
     *
     */   
-    function buy(address airline, string calldata flightNumber, uint timestamp, uint payout) external payable{
+    function buy(address airline, string calldata flightNumber, uint timestamp, uint payout) requireIsOperational external payable{
         require(msg.value < MAX_PRICE, "Maximum price is 1 ether");
         require(msg.value > 0, "Customer must provide a non-zero amount");
         uint price = msg.value;
@@ -308,7 +302,7 @@ contract FlightSuretyData {
      *  @dev Transfers eligible payout funds to insuree
      *
     */
-    function pay() external originatedFromApp {
+    function pay() external requireIsOperational originatedFromApp {
         address payable account = tx.origin;
         uint amountToTransfer = insuredBalances[account];
         insuredBalances[account] = 0;
@@ -320,7 +314,7 @@ contract FlightSuretyData {
     *      resulting in insurance payouts, the contract should be self-sustaining
     *
     */   
-    function fund() public payable originatedFromApp {
+    function fund() public payable requireIsOperational originatedFromApp {
         address payable originAddress = tx.origin;
         require(fundedAirlines[originAddress] == false, "Funding already registered for this airline");
         require(msg.value >= FUNDING_REQUIREMENT, "Minimum funding amount is 10 ether");
