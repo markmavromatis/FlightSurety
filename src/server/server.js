@@ -75,35 +75,53 @@ app.get('/api/airlines', (req, res) => {
 
 app.get('/api/balance/:address', async (req, res) => {
   const address = req.params.address;
-  const balance = await policyService.getBalance(address);
-  res.json({
-    balance
-  })
+  try {
+    const balance = await policyService.getBalance(address);
+    res.json({
+      balance
+    })
+  } catch(e) {
+    res.status(404).send('Error: Check account address!')
+  }
 })
 
 app.get('/api/balanceEther/:address', async (req, res) => {
   const address = req.params.address;
-  const balance = await policyService.getBalanceEther(address);
-  res.json({
-    balance
-  })
+  try {
+    const balance = await policyService.getBalanceEther(address);
+    res.json({
+      balance
+    })
+  } catch(e) {
+    res.status(404).send('Error: Check account address!')
+  }
+
 })
 
 app.post('/api/pay/:address', async (req, res) => {
   const address = req.params.address;
-  const balance = await policyService.pay(address);
-  res.json({
-    balance
-  })
+  try {
+    const balance = await policyService.pay(address);
+    res.json({
+      balance
+    })
+  } catch(e) {
+    res.status(404).send('Error: Check account address!')
+  }
+
 })
 
 app.get('/api/policies/:address', async (req, res) => {
   console.log("API call: policies");
   const address = req.params.address;
   console.log("Address is: " + address);
-  const result = await policyService.getPolicies(address);
+  try {
+    const result = await policyService.getPolicies(address);
+    res.json({result: result});
+  } catch(e) {
+    res.status(404).send('Error: Check account address!')
+  }
 
-  res.json({result: result});
 })
 
 app.get('/api/policy/:address/:index', async (req, res) => {
@@ -112,18 +130,26 @@ app.get('/api/policy/:address/:index', async (req, res) => {
   const index = req.params.index;
   console.log("Address is: " + address);
   console.log("Index is: " + index);
+  try {
   const result = await policyService.getPolicy(address, index);
-
   res.json({result: result});
+} catch(e) {
+  res.status(404).send('Error: Check account address / policy index!')
+}
+
 })
 
 app.get('/api/policyCount/:address', async (req, res) => {
   console.log("API call: policyCount");
   const address = req.params.address;
   console.log("Address is: " + address);
-  const result = await policyService.getPolicyCount(address);
+  try {
+    const result = await policyService.getPolicyCount(address);
+    res.json({result: result});
+  } catch(e) {
+    res.status(404).send('Error: Check account address!')
+  }
 
-  res.json({result: result});
 })
 
 app.get('/api/oraclesReady', async (req, res) => {
@@ -179,8 +205,8 @@ app.post('/api/setOperatingStatus/:mode', async (req, res) => {
   try {
     const response = await systemService.setOperatingStatus(modeAsBoolean);
     res.json(response);
-  } catch (e) {
-    console.error(e);
+  } catch(e) {
+    res.status(404).send('Error: Check mode!')
   }
 })
 
