@@ -37,7 +37,7 @@ web3.eth.net.isListening()
       oracleService = new OracleService(accounts, flightSuretyApp);
 
       console.log("Initializing Policies service...");
-      policyService = new PolicyService(flightSuretyApp);
+      policyService = new PolicyService(accounts[0], flightSuretyApp, flightSuretyData);
 
       console.log("Initializing System service...");
       systemService = new SystemService(accounts[0], flightSuretyData);
@@ -76,6 +76,22 @@ app.get('/api/airlines', (req, res) => {
 app.get('/api/balance/:address', async (req, res) => {
   const address = req.params.address;
   const balance = await policyService.getBalance(address);
+  res.json({
+    balance
+  })
+})
+
+app.get('/api/balanceEther/:address', async (req, res) => {
+  const address = req.params.address;
+  const balance = await policyService.getBalanceEther(address);
+  res.json({
+    balance
+  })
+})
+
+app.post('/api/pay/:address', async (req, res) => {
+  const address = req.params.address;
+  const balance = await policyService.pay(address);
   res.json({
     balance
   })

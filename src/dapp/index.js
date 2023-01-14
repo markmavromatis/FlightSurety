@@ -175,7 +175,6 @@ async function displaySystemStatus() {
     displayDiv.append(section);
 
     // Disable tabs if system is offline
-
     if (status.inOperation) {
         APPLICATION_TABS.forEach((tabName) => {
             DOM.elid(tabName).classList.remove('disabled')
@@ -188,6 +187,13 @@ async function displaySystemStatus() {
         })
         DOM.elid('disableSystem').style.display = "none";
         DOM.elid('enableSystem').style.display = "";
+    }
+
+    // Disable Register Oracles button if oracles already registered or server down
+    if (!status.oraclesRegistered && status.serverUp) {
+        document.getElementById("registerOracles").style.display = "";
+    } else {
+        document.getElementById("registerOracles").style.display = "none";
     }
 }
 
@@ -313,7 +319,7 @@ DOM.elid('buy-confirm').addEventListener('click', async() => {
                 // })
 
 DOM.elid('pay').addEventListener('click', async () => {
-    await contract.pay();
+    await serverApi.pay(contract.owner);
     displayPolicies();
 })
 
@@ -324,13 +330,14 @@ async function displayPolicies() {
 
     let displaySuretyBalance = DOM.elid("display-surety-balance");
     let displayEthereumBalance = DOM.elid("display-ethereum-balance");
-    contract.getEtherBalance()
-    .then((tempBalance) => {displayEthereumBalance.innerText = Number(tempBalance).toLocaleString("en-us")});
+
+    const ethereumBalance = await serverApi.getBalanceEther(contract.owner);
+    displayEthereumBalance.innerText = Number(ethereumBalance).toLocaleString("en-us");
 
     document.getElementById("pay").style.display = balance > 0 ? "" : "none";
 
 
-    displaySuretyBalance.innerText = balance;
+    displaySuretyBalance.innerText = Number(balance).toLocaleString();
 
     let displayTable = DOM.elid("policies-table-body");
     let numberRows = displayTable.rows.length;
@@ -344,11 +351,11 @@ async function displayPolicies() {
         let cell2 = newRow.insertCell(1);
         cell2.innerHTML = result.flight;
         let cell3 = newRow.insertCell(2);
-        cell3.innerHTML = result.timestamp;
+        cell3.innerHTML = Date(result.timestamp);
         let cell4 = newRow.insertCell(3);
-        cell4.innerHTML = result.price;
+        cell4.innerHTML = Number(result.price).toLocaleString();
         let cell5 = newRow.insertCell(4);
-        cell5.innerHTML = result.payout;
+        cell5.innerHTML = Number(result.payout).toLocaleString();
         let cell6 = newRow.insertCell(5);
         cell6.innerHTML = result.paid;
     })

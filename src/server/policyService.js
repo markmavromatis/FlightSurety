@@ -2,16 +2,27 @@ import OracleService from "./OracleService";
 
 export default class PolicyService {
 
-    constructor(flightSuretyApp) {
-        this.flightSuretyApp = flightSuretyApp;          
+    constructor(ownerAccount, flightSuretyApp, flightSuretyData) {
+        this.owner = ownerAccount;
+        this.flightSuretyApp = flightSuretyApp;
+        this.flightSuretyData = flightSuretyData;
     };
 
     async getBalance(accountAddress) {
         console.log("Inside method getBalance...");
+
         const result = await this.flightSuretyApp.methods.getInsuredBalance(
                 accountAddress).call();
-        return result[0];
+        return result;
    }
+
+   async getBalanceEther(accountAddress) {
+    console.log("Inside method getBalanceEther...");
+    const result = await this.flightSuretyApp.methods.getInsuredBalanceEther(
+        accountAddress).call();
+    return result;
+    }
+
     async getPolicyCount(accountAddress) {
         console.log("Retrieving policies...");
         console.log("Address = " + accountAddress);
@@ -50,5 +61,10 @@ export default class PolicyService {
         return policies;
     }
 
+    async pay(accountAddress) {
+        console.log("Inside method pay...");
+        await this.flightSuretyData.methods.pay(accountAddress).send({from: this.owner});
+        return {success: true};
+   }
 
 }

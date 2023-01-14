@@ -1,8 +1,33 @@
+const STATUS_CODE_UNKNOWN = 0;
+const STATUS_CODE_ON_TIME = 10;
+const STATUS_CODE_LATE_AIRLINE = 20;
+const STATUS_CODE_LATE_WEATHER = 30;
+const STATUS_CODE_LATE_TECHNICAL = 40;
+const STATUS_CODE_LATE_OTHER = 50;
+
 export default class FlightsEventHandlers {
 
     constructor(c, serverApi) {
         this.contract = c;
         this.serverApi = serverApi;
+    }
+
+    convertFlightStatusCodeToDescription(code) {
+        if (code == STATUS_CODE_UNKNOWN) {
+            return "Unknown"
+        } else if (code == STATUS_CODE_ON_TIME) {
+            return "On Time"
+        } else if (code == STATUS_CODE_LATE_AIRLINE) {
+            return "Late (Airline)"
+        } else if (code == STATUS_CODE_LATE_WEATHER) {
+            return "Late (Weather)"
+        } else if (code == STATUS_CODE_LATE_TECHNICAL) {
+            return "Late (Technical)";
+        } else if (code == STATUS_CODE_LATE_OTHER) {
+            return "Late (Other)";
+        } else {
+            return "?";
+        }
     }
 
     async buyPolicy(flights, i, price) {
@@ -34,13 +59,10 @@ export default class FlightsEventHandlers {
         console.log("Getting flight for: " + flight.address + " " + flight.flightNumber + " " + flight.departureTime);
         try {
             const result = await this.contract.getFlightStatus(flight.address, flight.flightNumber, flight.departureTime);
-            console.log("Status is now: " + result);
-            if (result != 0) {
-                flight.status = result;
-            }
+            flight.status = this.convertFlightStatusCodeToDescription(result);
         } catch (e) {
             // Flight status not available. Leave a console message and continue.
-            console.error("No status available for flight " + flight.flightNumber);
+            console.error("No status available for flight " + flight.flightNumber, e);
         }
     }
 

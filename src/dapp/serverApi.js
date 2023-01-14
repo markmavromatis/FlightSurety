@@ -34,6 +34,14 @@ export default class ServerApi {
         return data.balance;
     }
 
+    async getBalanceEther(accountAddress) {
+        console.log("Inside method getBalance...");
+        const url = `${this.baseUrl}/api/balanceEther/${accountAddress}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.balance;
+    }
+
     async getPolicyCount(accountAddress) {
         const url = `${this.baseUrl}/api/policies/${accountAddress}`;
         console.log("URL is: " + url);
@@ -80,6 +88,14 @@ export default class ServerApi {
     async isOperational() {
         const url = `${this.baseUrl}/api/isOperational`;
         const res = await fetch(url, { method: "GET"})
+        const data = await res.json()
+        return data.status;
+    }
+
+    async pay(address) {
+        const url = `${this.baseUrl}/api/pay/${address}`;
+        console.log("URL = " + url);
+        const res = await fetch(url, { method: "POST"})
         const data = await res.json()
         return data.status;
     }

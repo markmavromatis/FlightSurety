@@ -91,7 +91,7 @@ contract('Oracles', async (accounts) => {
     await config.flightSuretyApp.registerFlight.sendTransaction(airline, flight, timestamp, {from: config.owner});
 
     // Buy contract
-    await config.flightSuretyApp.buy(airline, flight, timestamp, {from: config.owner, value: 1});
+    await config.flightSuretyApp.buy(airline, flight, timestamp, {from: config.owner, value: 1000});
 
     // Confirm payout in policy
     const policy = await config.flightSuretyApp.getExistingInsuranceContract(airline, flight, timestamp, {from: config.owner});
@@ -108,6 +108,7 @@ contract('Oracles', async (accounts) => {
     // Confirm account balance has increased
     const balanceAfter = parseInt(await config.flightSuretyApp.getInsuredBalance(config.owner));
     assert.equal(balanceBefore + payout, balanceAfter, "Insured balance be updated to reflect payout");
+    console.log("Balance after = " + balanceAfter);
 
     // Check policy fields
     const policyAfter = await config.flightSuretyApp.getExistingInsuranceContract(airline, flight, timestamp, {from: config.owner});

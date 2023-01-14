@@ -97,6 +97,10 @@ contract FlightSuretyApp {
         return dataContract.getInsuredBalance(account);
     }
 
+    function getInsuredBalanceEther(address account) public view returns (uint) {
+        return account.balance;
+    }
+
     function fund() public payable {
         return dataContract.fund.value(msg.value)();
     }
@@ -193,8 +197,8 @@ contract FlightSuretyApp {
         dataContract.buy.value(msg.value)(airline, flightNumber, timestamp, payout);
     }
 
-    function pay() external {
-        dataContract.pay();
+    function pay(address payable insuree) external {
+        dataContract.pay(insuree);
     }
 
    function getExistingInsuranceContract(address airline,
@@ -304,7 +308,11 @@ contract FlightSuretyApp {
             emit FlightStatusInfo(airline, flight, timestamp, statusCode);
 
             // Handle flight status as appropriate
-            processFlightStatus(airline, flight, timestamp, statusCode);
+            // Note: If the oracles already reported the flight late due to airline, do not change it!
+            // (In testing, I found cases where oracles had more than minimum responses for conflicting codes and flight was processed TWICE)
+            if (flights[key].statusCode != STATUS_CODE_LATE_AIRLINE) {
+                processFlightStatus(airline, flight, timestamp, statusCode);
+            }
         }
     }
 

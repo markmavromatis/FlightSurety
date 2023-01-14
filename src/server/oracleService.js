@@ -3,7 +3,12 @@ const ORACLE_COUNT = 20;
 const GAS_PRICE = 100000000000;
 const GAS_AMOUNT = 4800000;
 
+
+const STATUS_CODES = [0, 10, 20, 30, 40, 50];
+
 export default class OracleService {
+
+  // Unknown (0), On Time (10) or Late Airline (20), Late Weather (30), Late Technical (40), or Late Other (50)
 
     constructor(accounts, flightSuretyApp) {
         this.oracles = [];
@@ -67,7 +72,14 @@ export default class OracleService {
 
         console.log("***** EVENT")
         // Iterate over oracles and send updates for matches
-        const statusCode = 20;
+        // Generate random status code of Unknown (0), On Time (10) or Late Airline (20), Late Weather (30), Late Technical (40), or Late Other (50)
+        // To test out the payment of late airlines, I find it easier to increase the probability of hitting code 20.
+        let AMENDED_STATUS_CODES = STATUS_CODES;
+        AMENDED_STATUS_CODES.push(20);
+        AMENDED_STATUS_CODES.push(20);
+        AMENDED_STATUS_CODES.push(20);
+        const randomIndex = Math.floor(Math.random() * AMENDED_STATUS_CODES.length);
+        const statusCode = AMENDED_STATUS_CODES[randomIndex];
         const requestIndex = event.returnValues[0];
         this.oracles.map(async (oracle, index) => {
           if (oracle.indexLookup[requestIndex] == true) {

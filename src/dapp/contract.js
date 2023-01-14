@@ -23,7 +23,7 @@ export default class Contract {
 
         this.web3.eth.getAccounts((error, accts) => {
 
-            this.owner = accts[0];
+            this.owner = accts[22];
             this.firstAirlineAddress = accts[1];
 
             let counter = 1;
@@ -87,14 +87,9 @@ export default class Contract {
             flight: flight,
             timestamp: Math.floor((new Date(timestamp)).getTime() / 1000)
         }
-        console.log("** Inside getFlightStatus\n" + JSON.stringify(payload));
         return self.flightSuretyApp.methods
             .getFlightStatus(payload.airline, payload.flight, payload.timestamp)
-            .call({ from: self.owner}, (error, result) => {
-                // console.log("****** Error = " + error);
-                // console.log("****** Result = " + result);
-                // return result;
-            });
+            .call({ from: self.owner});
     }
 
     async registerFlight(airline, flight, timestamp) {
@@ -106,12 +101,7 @@ export default class Contract {
         }
         return self.flightSuretyApp.methods
             .registerFlight(payload.airline, payload.flight, payload.timestamp)
-            .send({ from: self.owner, gas: DEFAULT_GAS}, (error, result) => {
-                console.log("RegisterFlight result: " + result);
-                if (error) {
-                    console.error("RegisterFlight error: " + error);
-                }
-            });
+            .send({ from: self.owner, gas: DEFAULT_GAS})
     }
 
     registerAirline(airlineAccount, airlineName, callback) {
@@ -150,10 +140,4 @@ export default class Contract {
         return self.web3.eth.getBalance(self.owner);
     }
 
-    async pay() {
-        let self = this;
-        return self.flightSuretyApp.methods
-            .pay()
-            .send({ from: self.owner}, (error, result) => {});
-    }
 }

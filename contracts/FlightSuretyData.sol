@@ -292,7 +292,9 @@ contract FlightSuretyData {
                 address customer = policy.account;
                 policy.paid = true;
                 insuranceContracts[indexes[i]] = policy;
-                insuredBalances[customer] = insuredBalances[customer] + payout;
+                uint originalBalance = insuredBalances[customer];
+                insuredBalances[customer] = insuredBalances[customer].add(payout);
+                require(insuredBalances[customer] - payout == originalBalance, "Balance arithmetic error!");
             }
         }
     }
@@ -302,11 +304,10 @@ contract FlightSuretyData {
      *  @dev Transfers eligible payout funds to insuree
      *
     */
-    function pay() external requireIsOperational originatedFromApp {
-        address payable account = tx.origin;
-        uint amountToTransfer = insuredBalances[account];
-        insuredBalances[account] = 0;
-        account.transfer(amountToTransfer);
+    function pay(address payable insuree) external requireIsOperational requireContractOwner {
+        uint amountToTransfer = insuredBalances[insuree];
+        insuredBalances[insuree] = 0;
+        insuree.transfer(amountToTransfer);
     }
 
    /**
